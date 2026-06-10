@@ -1,0 +1,17 @@
+# Local-dev overrides. Merged automatically by `docker compose up`.
+services:
+  app:
+    command:
+      - sh
+      - -c
+      - |
+        alembic upgrade head &&
+        python -m scripts.seed || true
+    environment:
+      APP_ENV: local
+      LOG_LEVEL: DEBUG
+    volumes:
+      - ./src:/app/src
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+      - ./scripts:/app/scripts

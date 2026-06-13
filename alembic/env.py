@@ -7,13 +7,16 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import pool
-from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Ensure app package is importable when running from project root.
 from app.core.config import settings
 from app.db.base import Base
 from app import models
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from sqlalchemy.engine import Connection
 
 config = context.config
 config.set_main_option("sqlalchemy.url", settings.database_url)

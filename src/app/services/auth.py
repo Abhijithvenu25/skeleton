@@ -5,10 +5,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Any
-
-from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import TYPE_CHECKING, Any
 
 from app.core.exceptions import ConflictError, UnauthorizedError
 from app.core.security import (
@@ -18,7 +15,6 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
-from app.models.user import User
 from app.repositories.user import UserRepository
 from app.schemas.auth import (
     LoginIn,
@@ -26,6 +22,12 @@ from app.schemas.auth import (
     TokenPair,
     UserOut,
 )
+
+if TYPE_CHECKING:
+    from redis.asyncio import Redis
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.models.user import User
 
 # Redis key shape for refresh-token store
 _REFRESH_KEY = "refresh:{jti}"

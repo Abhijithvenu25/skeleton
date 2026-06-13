@@ -28,14 +28,14 @@ class Settings(BaseSettings):
     postgres_host: str = "postgres"
     postgres_port: int = 5432
     postgres_user: str = "app"
-    postgres_password: str = "app"
+    postgres_password: str = "app"  # noqa: S105
     postgres_db: str = "app"
 
     # Redis
     redis_url: RedisDsn = Field(default="redis://redis:6379/0")  # type: ignore[assignment]
 
     # JWT
-    jwt_secret: str = "change-me"
+    jwt_secret: str = "change-me"  # noqa: S105
     jwt_algorithm: str = "HS256"
     access_token_ttl_min: int = 15
     refresh_token_ttl_days: int = 7
@@ -46,7 +46,7 @@ class Settings(BaseSettings):
 
     # Seed
     seed_admin_email: str = "admin@example.com"
-    seed_admin_password: str = "admin12345"
+    seed_admin_password: str = "admin12345"  # noqa: S105
 
     @field_validator("cors_allow_origins_raw", mode="before")
     @classmethod
@@ -82,7 +82,7 @@ class Settings(BaseSettings):
         """Refuse to start with weak config outside `local`."""
         if self.app_env == "local":
             return
-        if self.jwt_secret == "change-me" or len(self.jwt_secret) < 32:
+        if self.jwt_secret == "change-me" or len(self.jwt_secret) < 32:  # noqa: S105
             raise RuntimeError(
                 "JWT_SECRET must be set to a strong (>=32 char) value outside local env"
             )

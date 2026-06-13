@@ -15,7 +15,7 @@ __all__ = ["app"]
 
 def run() -> None:
     """Convenience entrypoint for `python -m app.asgi`."""
-    uvicorn.run("app.asgi:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("app.asgi:app", host="0.0.0.0", port=8000, reload=False)  # noqa: S104
 
 
 if __name__ == "__main__":

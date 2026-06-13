@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.schemas.common import MessageResponse
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class UserIn(BaseModel):

@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import uuid
-from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Index, String
 from sqlalchemy.dialects.postgresql import CITEXT, UUID
@@ -11,7 +10,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.models.base import TimestampMixin, UUIDPKMixin
-from app.models.user import User
+
+if TYPE_CHECKING:
+    import uuid
+    from datetime import datetime
+
+    from app.models.user import User
 
 
 class Customer(Base, UUIDPKMixin, TimestampMixin):

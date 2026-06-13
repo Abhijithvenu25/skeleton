@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any, Literal
 
 import jwt
@@ -55,7 +55,7 @@ def _encode(
 def create_access_token(subject: str) -> str:
     token, _, _ = _encode(
         subject=subject,
-        token_type="access",
+        token_type="access",  # noqa: S106
         expires_delta=timedelta(minutes=settings.access_token_ttl_min),
     )
     return token
@@ -65,7 +65,7 @@ def create_refresh_token(subject: str) -> tuple[str, str, datetime]:
     """Return (token, jti, expires_at). Caller persists jti→user_id in Redis."""
     return _encode(
         subject=subject,
-        token_type="refresh",
+        token_type="refresh",  # noqa: S106
         expires_delta=timedelta(days=settings.refresh_token_ttl_days),
     )
 

@@ -3,20 +3,21 @@
 from __future__ import annotations
 
 import uuid
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Query, status
 
-from app.api.deps import CurrentUser, DbSession
-from app.schemas.common import MessageResponse
+from app.schemas.common import MessageResponse, Page
 from app.schemas.customer import (
     CustomerIn,
     CustomerOut,
     CustomerPage,
     CustomerPatch,
 )
-from app.schemas.common import Page
 from app.services.customer import CustomerService
+
+if TYPE_CHECKING:
+    from app.api.deps import CurrentUser, DbSession
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 

@@ -10,9 +10,8 @@ from __future__ import annotations
 import asyncio
 import os
 import uuid
-from collections.abc import AsyncIterator
+from typing import TYPE_CHECKING
 
-import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
@@ -23,8 +22,12 @@ from app.core.config import settings
 from app.core.security import create_access_token
 from app.db.redis import close_redis
 from app.main import app
-from app.models.user import User
 from app.repositories.user import UserRepository
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+
+    from app.models.user import User
 
 # Per-test DB index. Falls back to 1 if unset.
 os.environ.setdefault("REDIS_TEST_DB", "1")

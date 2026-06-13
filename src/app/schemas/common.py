@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -19,7 +19,7 @@ class ErrorResponse(BaseModel):
     details: dict[str, object] | None = None
 
 
-class Page(BaseModel, Generic[T]):
+class Page[T](BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     items: list[T]

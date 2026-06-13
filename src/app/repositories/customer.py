@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
-import uuid
-from collections.abc import Sequence
 from datetime import UTC
+from typing import TYPE_CHECKING
 
 from sqlalchemy import func, or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.customer import Customer
+
+if TYPE_CHECKING:
+    import uuid
+    from collections.abc import Sequence
+
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class CustomerRepository:
@@ -84,7 +88,7 @@ class CustomerRepository:
         return customer
 
     async def soft_delete(self, customer: Customer) -> None:
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         customer.deleted_at = datetime.now(tz=UTC)
         await self._session.flush()

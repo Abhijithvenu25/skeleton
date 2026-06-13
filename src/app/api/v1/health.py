@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from fastapi import APIRouter, status
 from sqlalchemy import text
 
-from app.api.deps import DbSession, RedisDep
+if TYPE_CHECKING:
+    from app.api.deps import DbSession, RedisDep
 
 router = APIRouter(prefix="/health", tags=["health"])
 

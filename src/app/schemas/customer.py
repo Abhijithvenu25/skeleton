@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-import uuid
-from datetime import datetime
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.schemas.common import Page
+
+if TYPE_CHECKING:
+    import uuid
+    from datetime import datetime
 
 
 class CustomerBase(BaseModel):

@@ -3,16 +3,20 @@
 from __future__ import annotations
 
 import math
-import uuid
 from dataclasses import dataclass
-
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import TYPE_CHECKING
 
 from app.core.exceptions import ForbiddenError, NotFoundError
-from app.models.customer import Customer
 from app.repositories.customer import CustomerRepository
 from app.schemas.common import Page
 from app.schemas.customer import CustomerIn, CustomerOut, CustomerPatch
+
+if TYPE_CHECKING:
+    import uuid
+
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    from app.models.customer import Customer
 
 
 @dataclass(slots=True)

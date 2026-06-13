@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import AsyncIterator, Callable, Awaitable
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -18,6 +17,9 @@ from app.db.redis import get_redis
 from app.db.session import get_session
 from app.models.user import User
 from app.repositories.user import UserRepository
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Awaitable, Callable
 
 bearer_scheme = HTTPBearer(auto_error=False, description="JWT access token")
 

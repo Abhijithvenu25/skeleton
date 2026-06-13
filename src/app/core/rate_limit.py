@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import time
 import uuid
+from typing import TYPE_CHECKING
 
-from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from app.core.exceptions import RateLimitError
 from app.core.logging import get_logger
+
+if TYPE_CHECKING:
+    from redis.asyncio import Redis
 
 logger = get_logger(__name__)
 

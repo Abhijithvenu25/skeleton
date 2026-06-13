@@ -22,7 +22,8 @@ async def test_register_login_refresh_logout_flow(client):
     assert body["user"]["email"] == "alice@example.com"
     access = body["token"]["access_token"]
     refresh = body["token"]["refresh_token"]
-    assert access and refresh
+    assert access
+    assert refresh
 
     # /me with the access token
     r = await client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {access}"})

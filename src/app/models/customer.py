@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Index, String
@@ -12,9 +14,6 @@ from app.db.base import Base
 from app.models.base import TimestampMixin, UUIDPKMixin
 
 if TYPE_CHECKING:
-    import uuid
-    from datetime import datetime
-
     from app.models.user import User
 
 

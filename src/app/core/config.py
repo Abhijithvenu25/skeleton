@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     postgres_user: str = "app"
     postgres_password: str = "app"  # noqa: S105
     postgres_db: str = "app"
+    postgres_ssl: str | None = None  # e.g. "require" for Neon/Render Postgres
 
     # Redis
     redis_url: RedisDsn = Field(default="redis://redis:6379/0")  # type: ignore[assignment]
@@ -69,6 +70,13 @@ class Settings(BaseSettings):
             f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+
+    @property
+    def database_connect_args(self) -> dict[str, object]:
+        # asyncpg takes SSL as a connect kwarg, not a URL query string.
+        if self.postgres_ssl:
+            return {"ssl": self.postgres_ssl}
+        return {}
 
     @property
     def database_url_sync(self) -> str:

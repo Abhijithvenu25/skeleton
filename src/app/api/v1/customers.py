@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Annotated
 
 from fastapi import APIRouter, Query, status
 
+from app.api.deps import CurrentUser, DbSession
 from app.schemas.common import MessageResponse, Page
 from app.schemas.customer import (
     CustomerIn,
@@ -15,9 +16,6 @@ from app.schemas.customer import (
     CustomerPatch,
 )
 from app.services.customer import CustomerService
-
-if TYPE_CHECKING:
-    from app.api.deps import CurrentUser, DbSession
 
 router = APIRouter(prefix="/customers", tags=["customers"])
 

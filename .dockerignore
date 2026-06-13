@@ -14,7 +14,6 @@ htmlcov
 .vscode
 .DS_Store
 tests
-README.md
 docker-compose*.yml
 Makefile
 .dockerignore

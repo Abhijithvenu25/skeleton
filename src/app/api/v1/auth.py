@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, status
 
@@ -13,7 +14,6 @@ from app.api.deps import (
     rate_limit,
 )
 from app.core.config import settings
-from app.core.security import decode_token
 from app.schemas.auth import (
     AuthMeOut,
     AuthOut,
@@ -29,8 +29,11 @@ from app.services.auth import AuthService
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def _auth_service(db: DbSession, redis: RedisDep) -> AuthService:
+def _get_auth_service(db: DbSession, redis: RedisDep) -> AuthService:
     return AuthService(session=db, redis=redis)
+
+
+AuthServiceDep = Annotated[AuthService, Depends(_get_auth_service)]
 
 
 @router.post(
@@ -42,12 +45,17 @@ def _auth_service(db: DbSession, redis: RedisDep) -> AuthService:
 )
 async def register(
     payload: RegisterIn,
-    db: DbSession,
-    redis: RedisDep,
+    service: AuthServiceDep,
 ) -> AuthOut:
-    service = _auth_service(db, redis)
-    user, token = await service.register(payload)
-    return AuthOut(user=RegisterOut.model_validate(user), token=token)
+    user, token = await service.register(
+        email=payload.email,
+        password=payload.password,
+        full_name=payload.full_name,
+    )
+    return AuthOut(
+        user=RegisterOut.model_validate(user),
+        token=token,
+    )
 
 
 @router.post(
@@ -56,10 +64,15 @@ async def register(
     summary="Login and obtain a token pair",
     dependencies=[Depends(rate_limit(key_prefix="login", limit=settings.rate_limit_login_per_min))],
 )
-async def login(payload: LoginIn, db: DbSession, redis: RedisDep) -> AuthOut:
-    service = _auth_service(db, redis)
-    user, token = await service.login(payload)
-    return AuthOut(user=RegisterOut.model_validate(user), token=token)
+async def login(
+    payload: LoginIn,
+    service: AuthServiceDep,
+) -> AuthOut:
+    user, token = await service.login(email=payload.email, password=payload.password)
+    return AuthOut(
+        user=RegisterOut.model_validate(user),
+        token=token,
+    )
 
 
 @router.post(
@@ -69,10 +82,8 @@ async def login(payload: LoginIn, db: DbSession, redis: RedisDep) -> AuthOut:
 )
 async def refresh(
     payload: RefreshIn,
-    db: DbSession,
-    redis: RedisDep,
+    service: AuthServiceDep,
 ) -> TokenPair:
-    service = _auth_service(db, redis)
     return await service.refresh(payload.refresh_token)
 
 
@@ -83,17 +94,10 @@ async def refresh(
 )
 async def logout(
     request: Request,
-    db: DbSession,
-    redis: RedisDep,
-    current_user: CurrentUser,
+    service: AuthServiceDep,
+    current_user: CurrentUser,  # noqa: ARG001
 ) -> MessageResponse:
-    service = _auth_service(db, redis)
-    # Best-effort: decode the access token to know the subject (== user id).
-    auth_header = request.headers.get("authorization", "")
-    if auth_header.lower().startswith("bearer "):
-        token = auth_header.split(" ", 1)[1]
-        payload = decode_token(token, expected_type="access")
-        await service.logout(payload)
+    await service.logout(request=request)
     return MessageResponse(message="Logged out")
 
 
@@ -104,9 +108,5 @@ async def logout(
 )
 async def me(
     current_user: CurrentUser,
-    db: DbSession,
-    redis: RedisDep,
 ) -> AuthMeOut:
-    service = _auth_service(db, redis)
-    user_out = await service.get_user(uuid.UUID(str(current_user.id)))
-    return AuthMeOut(**user_out.model_dump())
+    return AuthMeOut.model_validate(current_user)

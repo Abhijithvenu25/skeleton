@@ -1,4 +1,4 @@
-.PHONY: help install sync up down logs shell ps migrate revision test test-unit test-int lint format typecheck seed clean reset
+.PHONY: help install sync up down logs shell ps migrate revision lint format typecheck seed clean reset
 
 PYTHON ?= python
 DC     ?= docker compose
@@ -14,9 +14,6 @@ help:
 	@echo "  migrate      Apply Alembic migrations"
 	@echo "  revision m=  Create a new migration (provide m=\"message\")"
 	@echo "  seed         Seed dev data (admin user)"
-	@echo "  test         Run full test suite"
-	@echo "  test-unit    Run unit tests only"
-	@echo "  test-int     Run integration tests (requires compose up)"
 	@echo "  lint         Run ruff"
 	@echo "  format       Run ruff format"
 	@echo "  typecheck    Run mypy"
@@ -55,15 +52,6 @@ revision:
 
 seed:
 	$(DC) exec app python -m scripts.seed
-
-test:
-	uv run pytest -q
-
-test-unit:
-	uv run pytest -q tests/unit
-
-test-int:
-	uv run pytest -q tests/integration
 
 lint:
 	uv run ruff check .

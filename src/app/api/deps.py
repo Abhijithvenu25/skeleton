@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Annotated
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from redis.asyncio import Redis
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import UnauthorizedError
@@ -16,7 +17,6 @@ from app.core.security import decode_token
 from app.db.redis import get_redis
 from app.db.session import get_session
 from app.models.user import User
-from app.repositories.user import UserRepository
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Awaitable, Callable
@@ -54,7 +54,7 @@ async def get_current_user(
     except ValueError as exc:
         raise UnauthorizedError("Invalid token subject") from exc
 
-    user = await UserRepository(session).get_by_id(user_id)
+    user = await session.scalar(select(User).where(User.id == user_id))
     if user is None or not user.is_active:
         raise UnauthorizedError("User not active")
     return user

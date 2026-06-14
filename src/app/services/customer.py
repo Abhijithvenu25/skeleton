@@ -1,33 +1,41 @@
-"""Customer service — business logic around customer CRUD and search."""
+"""Customer service: CRUD + pagination + search."""
 
 from __future__ import annotations
 
-import math
-from dataclasses import dataclass
-from typing import TYPE_CHECKING
+import uuid
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ForbiddenError, NotFoundError
-from app.repositories.customer import CustomerRepository
-from app.schemas.common import Page
-from app.schemas.customer import CustomerIn, CustomerOut, CustomerPatch
-
-if TYPE_CHECKING:
-    import uuid
-
-    from sqlalchemy.ext.asyncio import AsyncSession
-
-    from app.models.customer import Customer
+from app.models.customer import Customer
+from app.schemas.customer import CustomerIn, CustomerPatch
 
 
-@dataclass(slots=True)
 class CustomerService:
-    session: AsyncSession
+    """Encapsulates the customer business logic."""
 
-    def _repo(self) -> CustomerRepository:
-        return CustomerRepository(self.session)
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    async def create(self, *, owner_id: uuid.UUID, payload: CustomerIn) -> CustomerOut:
-        customer = await self._repo().create(
+    # ---- Internal helpers ---------------------------------------------------
+
+    async def _owned_or_404(self, customer_id: uuid.UUID, owner_id: uuid.UUID) -> Customer:
+        customer = await Customer.get_by_id(self.session, customer_id)
+        if customer is None or customer.deleted_at is not None:
+            raise NotFoundError("Customer not found")
+        if customer.owner_id != owner_id:
+            raise ForbiddenError("Not allowed to access this customer")
+        return customer
+
+    # ---- Public API ---------------------------------------------------------
+
+    async def create(
+        self,
+        *,
+        owner_id: uuid.UUID,
+        payload: CustomerIn,
+    ) -> Customer:
+        customer = Customer(
             owner_id=owner_id,
             name=payload.name,
             email=payload.email,
@@ -35,60 +43,50 @@ class CustomerService:
             company=payload.company,
             notes=payload.notes,
         )
+        self.session.add(customer)
         await self.session.commit()
-        return CustomerOut.model_validate(customer)
-
-    async def get(self, *, owner_id: uuid.UUID, customer_id: uuid.UUID) -> CustomerOut:
-        customer = self._assert_owner(await self._repo().get_by_id(customer_id), owner_id)
-        return CustomerOut.model_validate(customer)
+        await self.session.refresh(customer)
+        return customer
 
     async def list(
         self,
         *,
         owner_id: uuid.UUID,
-        q: str | None = None,
+        query: str | None = None,
         page: int = 1,
         size: int = 20,
-    ) -> Page[CustomerOut]:
-        items, total = await self._repo().list(
-            owner_id=owner_id, q=q, page=page, size=size
+    ) -> tuple[list[Customer], int]:
+        offset = (page - 1) * size
+        return await Customer.search_by_owner(
+            self.session,
+            owner_id,
+            query=query,
+            offset=offset,
+            limit=size,
         )
-        pages = max(1, math.ceil(total / size)) if total else 1
-        return Page[CustomerOut](
-            items=[CustomerOut.model_validate(c) for c in items],
-            total=total,
-            page=page,
-            size=size,
-            pages=pages,
-        )
+
+    async def get(self, *, customer_id: uuid.UUID, owner_id: uuid.UUID) -> Customer:
+        return await self._owned_or_404(customer_id, owner_id)
 
     async def patch(
         self,
         *,
-        owner_id: uuid.UUID,
         customer_id: uuid.UUID,
+        owner_id: uuid.UUID,
         payload: CustomerPatch,
-    ) -> CustomerOut:
-        customer = self._assert_owner(
-            await self._repo().get_by_id(customer_id), owner_id
-        )
+    ) -> Customer:
+        customer = await self._owned_or_404(customer_id, owner_id)
+
         data = payload.model_dump(exclude_unset=True)
-        if data:
-            await self._repo().update(customer, **data)
+        for key, value in data.items():
+            setattr(customer, key, value)
         await self.session.commit()
-        return CustomerOut.model_validate(customer)
-
-    async def delete(self, *, owner_id: uuid.UUID, customer_id: uuid.UUID) -> None:
-        customer = self._assert_owner(
-            await self._repo().get_by_id(customer_id), owner_id
-        )
-        await self._repo().soft_delete(customer)
-        await self.session.commit()
-
-    @staticmethod
-    def _assert_owner(customer: Customer | None, owner_id: uuid.UUID) -> Customer:
-        if customer is None or customer.deleted_at is not None:
-            raise NotFoundError("Customer not found")
-        if customer.owner_id != owner_id:
-            raise ForbiddenError("Not allowed to access this customer")
+        await self.session.refresh(customer)
         return customer
+
+    async def soft_delete(self, *, customer_id: uuid.UUID, owner_id: uuid.UUID) -> None:
+        customer = await self._owned_or_404(customer_id, owner_id)
+        from datetime import UTC, datetime
+
+        customer.deleted_at = datetime.now(tz=UTC)
+        await self.session.commit()

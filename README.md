@@ -15,7 +15,7 @@ Production-ready FastAPI backend with JWT auth, PostgreSQL, and Redis.
 - ruff + mypy + pytest
 - Multi-stage Docker image, docker-compose orchestration
 
-## Quickstart
+## Quickstart (Docker)
 
 ```bash
 # 1. Configure env
@@ -31,6 +31,103 @@ make seed
 curl http://localhost:8000/api/v1/healthz
 curl http://localhost:8000/api/v1/readyz
 ```
+
+## Running locally without Docker
+
+Use this path if you want to iterate on the API without the Docker overhead.
+You'll need Python 3.12, a local PostgreSQL instance, and a local Redis instance
+running on the defaults the app expects.
+
+### 1. Prerequisites
+
+- Python 3.12 (matches `.python-version`)
+- PostgreSQL 16 reachable on `localhost:5432`
+- Redis 7 reachable on `localhost:6379`
+- [uv](https://docs.astral.sh/uv/) for dependency management
+
+### 2. Create the database
+
+```bash
+createdb kalisia_develop
+```
+
+### 3. Configure env
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` so the local values point at your local services, e.g.:
+
+```dotenv
+APP_ENV=local
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=kalisia_develop
+POSTGRES_SSL=disable
+REDIS_URL=redis://localhost:6379/0
+```
+
+Keep `POSTGRES_SSL=disable` for a plain local Postgres; use `require` only for
+managed databases like Neon.
+
+### 4. Install dependencies
+
+```bash
+uv sync --all-extras
+```
+
+This creates `.venv/` and installs the app + dev tooling.
+
+### 5. Run migrations
+
+```bash
+uv run alembic upgrade head
+```
+
+### 6. Seed an admin user
+
+```bash
+uv run python -m scripts.seed
+```
+
+The default credentials come from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in
+`.env`.
+
+### 7. Start the API
+
+```bash
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+`--reload` watches `src/` and restarts on save.
+
+### 8. Smoke test
+
+```bash
+curl http://localhost:8000/api/v1/healthz
+curl http://localhost:8000/api/v1/readyz
+```
+
+Both should return `{"status":"ok"}`. `/readyz` will report `degraded` if the
+DB or Redis check fails — check the connection settings in `.env` if so.
+
+### 9. Open the docs
+
+- Swagger UI: http://localhost:8000/api/v1/docs
+- ReDoc:      http://localhost:8000/api/v1/redoc
+
+### Troubleshooting
+
+- **`pydantic ... is not fully defined` on `/docs`** — every module that uses
+  `from __future__ import annotations` must keep its type-only imports at
+  module top level (not inside `if TYPE_CHECKING:`) so Pydantic's `TypeAdapter`
+  can resolve them at schema-generation time.
+- **`asyncpg ... SSL error`** — set `POSTGRES_SSL=disable` for plain local
+  Postgres; the `require` value is only for managed providers.
+- **Port already in use** — change the port: `uvicorn app.main:app --port 8001`.
 
 ## Endpoints
 

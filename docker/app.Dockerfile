@@ -59,7 +59,7 @@ USER app
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -fsS http://localhost:8000/api/v1/healthz || exit 1
+    CMD curl -fsS http://localhost:8000/api/v1/health/healthz || exit 1
 
-# Default: run migrations then start gunicorn. Override in compose for dev.
-CMD ["sh", "-c", "alembic upgrade head && gunicorn app.asgi:app -k uvicorn.workers.UvicornWorker -w 2 -b 0.0.0.0:8000 --access-logfile - --error-logfile -"]
+# Default: run migrations then start uvicorn. Override in compose for dev.
+CMD ["sh", "-c", "alembic upgrade head && uvicorn app.asgi:app --host 0.0.0.0 --port 8000"]

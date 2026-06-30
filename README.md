@@ -24,12 +24,9 @@ cp .env.example .env
 # 2. Bring up the stack (app waits for pg/redis to be healthy, then auto-migrates)
 make up
 
-# 3. Seed an admin user
-make seed
-
-# 4. Smoke test
-curl http://localhost:8000/api/v1/healthz
-curl http://localhost:8000/api/v1/readyz
+# 3. Smoke test
+curl http://localhost:8000/api/v1/health/healthz
+curl http://localhost:8000/api/v1/health/readyz
 ```
 
 ## Running locally without Docker
@@ -87,16 +84,7 @@ This creates `.venv/` and installs the app + dev tooling.
 uv run alembic upgrade head
 ```
 
-### 6. Seed an admin user
-
-```bash
-uv run python -m scripts.seed
-```
-
-The default credentials come from `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` in
-`.env`.
-
-### 7. Start the API
+### 6. Start the API
 
 ```bash
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
@@ -107,8 +95,8 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ### 8. Smoke test
 
 ```bash
-curl http://localhost:8000/api/v1/healthz
-curl http://localhost:8000/api/v1/readyz
+curl http://localhost:8000/api/v1/health/healthz
+curl http://localhost:8000/api/v1/health/readyz
 ```
 
 Both should return `{"status":"ok"}`. `/readyz` will report `degraded` if the
@@ -140,11 +128,63 @@ DB or Redis check fails — check the connection settings in `.env` if so.
 | POST   | `/api/v1/auth/refresh`  | refresh JWT |
 | POST   | `/api/v1/auth/logout`   | access JWT |
 | GET    | `/api/v1/auth/me`       | access JWT |
-| GET    | `/api/v1/customers`     | access JWT |
-| POST   | `/api/v1/customers`     | access JWT |
-| GET    | `/api/v1/customers/{id}`| access JWT |
-| PATCH  | `/api/v1/customers/{id}`| access JWT |
-| DELETE | `/api/v1/customers/{id}`| access JWT |
+
+### CRM
+
+| Method | Path | Auth |
+| --- | --- | --- |
+| GET    | `/api/v1/roles`                  | access JWT |
+| POST   | `/api/v1/roles`                  | access JWT |
+| GET    | `/api/v1/roles/{id}`             | access JWT |
+| PATCH  | `/api/v1/roles/{id}`             | access JWT |
+| DELETE | `/api/v1/roles/{id}`             | access JWT |
+| GET    | `/api/v1/staff-profiles`         | access JWT |
+| POST   | `/api/v1/staff-profiles/{user_id}` | access JWT |
+| GET    | `/api/v1/staff-profiles/{user_id}` | access JWT |
+| PATCH  | `/api/v1/staff-profiles/{user_id}` | access JWT |
+| DELETE | `/api/v1/staff-profiles/{user_id}` | access JWT |
+| GET    | `/api/v1/companies`              | access JWT |
+| POST   | `/api/v1/companies`              | access JWT |
+| GET    | `/api/v1/companies/{id}`         | access JWT |
+| PATCH  | `/api/v1/companies/{id}`         | access JWT |
+| DELETE | `/api/v1/companies/{id}`         | access JWT |
+| GET    | `/api/v1/contacts`               | access JWT |
+| POST   | `/api/v1/contacts`               | access JWT |
+| GET    | `/api/v1/contacts/{id}`          | access JWT |
+| PATCH  | `/api/v1/contacts/{id}`          | access JWT |
+| DELETE | `/api/v1/contacts/{id}`          | access JWT |
+| GET    | `/api/v1/projects`               | access JWT |
+| POST   | `/api/v1/projects`               | access JWT |
+| GET    | `/api/v1/projects/{id}`          | access JWT |
+| PATCH  | `/api/v1/projects/{id}`          | access JWT |
+| DELETE | `/api/v1/projects/{id}`          | access JWT |
+| GET    | `/api/v1/enquiries`              | access JWT |
+| POST   | `/api/v1/enquiries`              | access JWT |
+| GET    | `/api/v1/enquiries/{id}`         | access JWT |
+| PATCH  | `/api/v1/enquiries/{id}`         | access JWT |
+| DELETE | `/api/v1/enquiries/{id}`         | access JWT |
+| POST   | `/api/v1/enquiries/{id}/mark-lost` | access JWT |
+| GET    | `/api/v1/site-visits`            | access JWT |
+| POST   | `/api/v1/site-visits`            | access JWT |
+| GET    | `/api/v1/site-visits/{id}`       | access JWT |
+| PATCH  | `/api/v1/site-visits/{id}`       | access JWT |
+| DELETE | `/api/v1/site-visits/{id}`       | access JWT |
+| GET    | `/api/v1/quotations`             | access JWT |
+| POST   | `/api/v1/quotations`             | access JWT |
+| GET    | `/api/v1/quotations/{id}`        | access JWT |
+| PATCH  | `/api/v1/quotations/{id}`        | access JWT |
+| DELETE | `/api/v1/quotations/{id}`        | access JWT |
+| POST   | `/api/v1/quotations/{id}/versions` | access JWT |
+| GET    | `/api/v1/quotations/{id}/versions` | access JWT |
+| GET    | `/api/v1/quotation-line-items`   | access JWT |
+| GET    | `/api/v1/quotation-line-items/by-version/{version_id}` | access JWT |
+| GET    | `/api/v1/quotation-line-items/{id}` | access JWT |
+| DELETE | `/api/v1/quotation-line-items/{id}` | access JWT |
+| GET    | `/api/v1/lost-enquiries`         | access JWT |
+| POST   | `/api/v1/lost-enquiries`         | access JWT |
+| GET    | `/api/v1/lost-enquiries/{id}`    | access JWT |
+| PATCH  | `/api/v1/lost-enquiries/{id}`    | access JWT |
+| DELETE | `/api/v1/lost-enquiries/{id}`    | access JWT |
 
 Docs: `http://localhost:8000/api/v1/docs` (Swagger), `/api/v1/redoc`.
 

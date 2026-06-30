@@ -2,16 +2,27 @@
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from typing import Literal
 
 from pydantic import Field, RedisDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# In local dev, .env.local is the source of truth for non-secret-leaning defaults
+# and is read from disk. In any other env we deliberately read no file: production
+# must come from real platform-injected environment variables, never from a file
+# that might have been baked into the image by mistake.
+_LOCAL_ENV_FILE = ".env.local"
+
+
+def _env_file_for(env: str) -> str | None:
+    return _LOCAL_ENV_FILE if env == "local" else None
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=_env_file_for(os.getenv("APP_ENV", "local")),
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -27,9 +38,9 @@ class Settings(BaseSettings):
     # PostgreSQL
     postgres_host: str = "postgres"
     postgres_port: int = 5432
-    postgres_user: str = "app"
-    postgres_password: str = "app"  # noqa: S105
-    postgres_db: str = "app"
+    postgres_user: str = "postgres"
+    postgres_password: str = "postgres"  # noqa: S105
+    postgres_db: str = "kalisia"
     postgres_ssl: str | None = None  # e.g. "require" for Neon/Render Postgres
 
     # Redis
@@ -44,10 +55,6 @@ class Settings(BaseSettings):
     # Rate limits
     rate_limit_login_per_min: int = 10
     rate_limit_register_per_min: int = 5
-
-    # Seed
-    seed_admin_email: str = "admin@example.com"
-    seed_admin_password: str = "admin12345"  # noqa: S105
 
     @field_validator("cors_allow_origins_raw", mode="before")
     @classmethod

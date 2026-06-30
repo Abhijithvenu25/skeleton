@@ -1,4 +1,4 @@
-.PHONY: help install sync up down logs shell ps migrate revision lint format typecheck seed clean reset
+.PHONY: help install sync up down logs shell ps migrate revision lint format typecheck clean reset
 
 PYTHON ?= python
 DC     ?= docker compose
@@ -13,7 +13,6 @@ help:
 	@echo "  ps           List running services"
 	@echo "  migrate      Apply Alembic migrations"
 	@echo "  revision m=  Create a new migration (provide m=\"message\")"
-	@echo "  seed         Seed dev data (admin user)"
 	@echo "  lint         Run ruff"
 	@echo "  format       Run ruff format"
 	@echo "  typecheck    Run mypy"
@@ -49,9 +48,6 @@ migrate:
 revision:
 	@test -n "$(m)" || (echo "Usage: make revision m=\"message\""; exit 1)
 	$(DC) exec app alembic revision --autogenerate -m "$(m)"
-
-seed:
-	$(DC) exec app python -m scripts.seed
 
 lint:
 	uv run ruff check .

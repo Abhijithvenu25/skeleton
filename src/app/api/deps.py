@@ -16,6 +16,7 @@ from app.core.rate_limit import SlidingWindowLimiter
 from app.core.security import decode_token
 from app.db.redis import get_redis
 from app.db.session import get_session
+from app.models.staff_profile import StaffProfile
 from app.models.user import User
 
 if TYPE_CHECKING:
@@ -61,6 +62,32 @@ async def get_current_user(
 
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
+
+
+async def get_current_user_with_role(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    session: DbSession,
+) -> tuple[User, str | None]:
+    """Like `get_current_user`, but also returns the user's role name (via
+    staff_profiles). Returns None for the role name if the user has no
+    staff_profile (e.g. the seed `system` user, or unregistered visitors).
+
+    NOT yet wired to enforce permissions on any endpoint — this is scaffolding
+    for the RBAC follow-up. Endpoint authors can opt in by replacing
+    `current_user: CurrentUser` with `current_user_role: CurrentUserWithRole`.
+    """
+    user = await get_current_user(credentials, session)
+    role_name = await session.scalar(
+        select(Role.name)
+        .join(StaffProfile, StaffProfile.role_id == Role.id)
+        .where(StaffProfile.user_id == user.id)
+    )
+    return user, role_name
+
+
+CurrentUserWithRole = Annotated[
+    tuple[User, str | None], Depends(get_current_user_with_role)
+]
 
 
 def rate_limit(*, key_prefix: str, limit: int) -> Callable[..., Awaitable[None]]:

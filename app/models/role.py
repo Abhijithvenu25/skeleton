@@ -13,7 +13,6 @@ from app.db.base import Base
 from app.models.base import TimestampMixin, UUIDPKMixin
 
 if TYPE_CHECKING:
-    from sqlalchemy import select as _select  # noqa: F401  (typing only)
     from sqlalchemy.ext.asyncio import AsyncSession
 
 
@@ -35,7 +34,15 @@ class Role(Base, UUIDPKMixin, TimestampMixin):
         return await session.scalar(select(cls).where(cls.id == role_id))
 
     @classmethod
-    async def get_by_name(cls, session: AsyncSession, name: str) -> Role | None:
+    async def exists_by_name(
+        cls, session: AsyncSession, name: str, *, exclude_id: uuid.UUID | None = None
+    ) -> bool:
+        """Pre-check used by RoleService.create/update to surface 409s without
+        relying on IntegrityError catching. Excludes `exclude_id` so an UPDATE
+        that re-uses the same name doesn't false-positive."""
         from sqlalchemy import select
 
-        return await session.scalar(select(cls).where(cls.name == name))
+        stmt = select(cls.id).where(cls.name == name)
+        if exclude_id is not None:
+            stmt = stmt.where(cls.id != exclude_id)
+        return (await session.scalar(stmt)) is not None

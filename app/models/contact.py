@@ -44,3 +44,22 @@ class Contact(Base, UUIDPKMixin, TimestampMixin, AuditedSoftDeleteMixin):
         from sqlalchemy import select
 
         return await session.scalar(select(cls).where(cls.id == contact_id))
+
+    @classmethod
+    async def has_active_primary_for_company(
+        cls, session: AsyncSession, company_id: uuid.UUID
+    ) -> bool:
+        """Pre-check for the partial unique index `uq_contacts_company_primary`
+        (at most one is_primary contact per active company). Used by
+        ContactService.create when `is_primary=True`."""
+        from sqlalchemy import select
+
+        return (
+            await session.scalar(
+                select(cls.id).where(
+                    cls.company_id == company_id,
+                    cls.is_primary.is_(True),
+                    cls.deleted_at.is_(None),
+                )
+            )
+        ) is not None

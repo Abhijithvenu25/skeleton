@@ -42,9 +42,23 @@ class QuotationVersion(Base, UUIDPKMixin, ImmutableMixin):
         return f"QuotationVersion(id={self.id!r}, version_no={self.version_no!r})"
 
     @classmethod
-    async def get_by_id(
-        cls, session: AsyncSession, version_id: uuid.UUID
-    ) -> QuotationVersion | None:
+    async def exists_for_quotation(
+        cls,
+        session: AsyncSession,
+        *,
+        quotation_id: uuid.UUID,
+        version_no: int,
+    ) -> bool:
+        """Pre-check used by QuotationService.add_version to surface a 409
+        on the (quotation_id, version_no) unique constraint without relying
+        on IntegrityError catching."""
         from sqlalchemy import select
 
-        return await session.scalar(select(cls).where(cls.id == version_id))
+        return (
+            await session.scalar(
+                select(cls.id).where(
+                    cls.quotation_id == quotation_id,
+                    cls.version_no == version_no,
+                )
+            )
+        ) is not None

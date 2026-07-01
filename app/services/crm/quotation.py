@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy import func as sa_func
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.quotation import Quotation
 from app.models.quotation_line_item import QuotationLineItem
@@ -14,13 +18,8 @@ from app.schemas.crm.quotation_version import QuotationVersionIn
 from app.services.crm._common import (
     apply_audit_create,
     apply_audit_update,
-    commit,
-    flush_and_refresh,
     paginate,
 )
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class QuotationService:
@@ -56,7 +55,8 @@ class QuotationService:
         quotation = Quotation(enquiry_id=payload.enquiry_id)
         apply_audit_create(quotation, actor=actor)
         self.session.add(quotation)
-        await flush_and_refresh(self.session, quotation)
+        await self.session.commit()
+        await self.session.refresh(quotation)
         return quotation
 
     async def update(
@@ -68,7 +68,7 @@ class QuotationService:
         if payload.status is not None:
             quotation.status = payload.status.value
         apply_audit_update(quotation, actor=actor)
-        await commit(self.session)
+        await self.session.commit()
         return quotation
 
     async def add_version(
@@ -86,14 +86,25 @@ class QuotationService:
         quotation = await self.get_by_id(quotation_id)
         # Source-of-truth: highest existing version_no on this quotation + 1.
         # (Falls back to 1 when no versions exist yet.)
-        from sqlalchemy import func as sa_func
-
         max_existing = await self.session.scalar(
             select(sa_func.max(QuotationVersion.version_no)).where(
                 QuotationVersion.quotation_id == quotation_id
             )
         )
         next_version_no = (max_existing or 0) + 1
+
+        # Pre-check: two concurrent add_version calls can compute the same
+        # next_version_no before either commits — the loser would hit the
+        # composite-PK constraint. Surface as 409 here.
+        if await QuotationVersion.exists_for_quotation(
+            self.session,
+            quotation_id=quotation_id,
+            version_no=next_version_no,
+        ):
+            raise ConflictError(
+                f"Version {next_version_no} already exists for this quotation "
+                "(retry the request)"
+            )
 
         # Compute amount up front so we can persist it on the version row.
         amount = sum(
@@ -110,7 +121,7 @@ class QuotationService:
             created_by_id=actor.id,
         )
         self.session.add(version)
-        await self.session.flush()  # populates version.id
+        await self.session.flush()  # populates version.id for the line-item FK
 
         for li in payload.line_items:
             line_total = li.quantity * li.unit_price
@@ -129,19 +140,7 @@ class QuotationService:
 
         quotation.current_version_no = next_version_no
         quotation.updated_by_id = actor.id
-        try:
-            await self.session.flush()  # ensure the FK target exists before commit
-            await self.session.flush()
-            await self.session.commit()
-        except IntegrityError as exc:
-            # Most likely: uq_quotation_versions_quote_version (composite
-            # PK on (quotation_id, version_no)). Two concurrent add_version
-            # calls can compute the same next_version_no before either
-            # commits — the loser hits the unique constraint.
-            await self.session.rollback()
-            raise ConflictError(
-                f"Version {next_version_no} already exists for this quotation (retry the request)"
-            ) from exc
+        await self.session.commit()
         await self.session.refresh(version)
         return version
 
@@ -161,4 +160,4 @@ class QuotationService:
         """Hard-delete (quotations cascade from enquiry — no soft-delete)."""
         quotation = await self.get_by_id(quotation_id)
         await self.session.delete(quotation)
-        await commit(self.session)
+        await self.session.commit()

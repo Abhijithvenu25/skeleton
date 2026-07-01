@@ -5,6 +5,8 @@ from __future__ import annotations
 import uuid
 from datetime import date
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.lost_enquiry import LostEnquiry
 from app.models.user import User
@@ -15,12 +17,8 @@ from app.schemas.crm.lost_enquiry import (
 from app.services.crm._common import (
     apply_audit_create,
     apply_audit_update,
-    commit,
-    flush_and_refresh,
     paginate,
 )
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class LostEnquiryService:
@@ -64,13 +62,8 @@ class LostEnquiryService:
         )
         apply_audit_create(lost, actor=actor)
         self.session.add(lost)
-        try:
-            await flush_and_refresh(self.session, lost)
-        except IntegrityError as exc:
-            # Most likely: uq_lost_enquiries_enquiry_id (1:1 with enquiry).
-            raise ConflictError(
-                "Lost enquiry already exists for this enquiry"
-            ) from exc
+        await self.session.commit()
+        await self.session.refresh(lost)
         return lost
 
     async def update(
@@ -84,10 +77,10 @@ class LostEnquiryService:
         if payload.notes is not None:
             lost.notes = payload.notes
         apply_audit_update(lost, actor=actor)
-        await commit(self.session)
+        await self.session.commit()
         return lost
 
     async def delete(self, lost_id: uuid.UUID, *, actor: User) -> None:
         lost = await self.get_by_id(lost_id)
         await self.session.delete(lost)
-        await commit(self.session)
+        await self.session.commit()

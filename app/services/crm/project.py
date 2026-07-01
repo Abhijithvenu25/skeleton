@@ -14,8 +14,6 @@ from app.services.crm._common import (
     apply_audit_create,
     apply_audit_soft_delete,
     apply_audit_update,
-    commit,
-    flush_and_refresh,
     paginate,
 )
 
@@ -59,7 +57,8 @@ class ProjectService:
         )
         apply_audit_create(project, actor=actor)
         self.session.add(project)
-        await flush_and_refresh(self.session, project)
+        await self.session.commit()
+        await self.session.refresh(project)
         return project
 
     async def update(
@@ -75,10 +74,10 @@ class ProjectService:
         if payload.description is not None:
             project.description = payload.description
         apply_audit_update(project, actor=actor)
-        await commit(self.session)
+        await self.session.commit()
         return project
 
     async def soft_delete(self, project_id: uuid.UUID, *, actor: User) -> None:
         project = await self.get_by_id(project_id)
         apply_audit_soft_delete(project, actor=actor)
-        await commit(self.session)
+        await self.session.commit()

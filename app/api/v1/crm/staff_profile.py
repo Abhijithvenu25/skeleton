@@ -9,10 +9,9 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import CurrentUser, DbSession
-from app.core.logging import get_logger
 from app.schemas.common import Page
 from app.schemas.crm.role import RoleOut
 from app.schemas.crm.staff_profile import (
@@ -27,7 +26,18 @@ from app.services.crm.staff_profile import StaffProfileService
 
 router = APIRouter(prefix="/staff-profiles", tags=["crm-staff-profiles"])
 
-logger = get_logger(__name__)
+
+async def _to_out(service: StaffProfileService, profile) -> StaffProfileOut:
+    """Build a StaffProfileOut from a profile, eagerly attaching roles.
+
+    The `roles` field on StaffProfileOut is a computed list sourced from the
+    user_roles junction (not an ORM column on StaffProfile), so we
+    populate it explicitly after model_validate.
+    """
+    out = StaffProfileOut.model_validate(profile)
+    roles = await service.list_roles_for_user(profile.user_id)
+    out.roles = [RoleOut.model_validate(r) for r in roles]
+    return out
 
 
 def _get_service(session: DbSession) -> StaffProfileService:
@@ -47,17 +57,12 @@ async def list_staff_profiles(
     size: int = Query(20, ge=1, le=100),
 ) -> Page[StaffProfileOut]:
     items, total = await service.list(page=page, size=size)
-    # Eager-load roles per profile for the response. List routes typically
-    # don't go through ORM .roles lazy loads, so we attach manually.
+    # Eager-load roles per profile. `StaffProfileOut.model_validate(p)` builds
+    # the row from attributes; we then attach roles explicitly since the
+    # `roles` field is computed from the N:M user_roles junction.
     out: list[StaffProfileOut] = []
-    for p in items:
-        roles = await service.list_roles_for_user(p.user_id)
-        out.append(
-            StaffProfileOut.model_validate(
-                {**{c.name: getattr(p, c.name) for c in p.__table__.columns},
-                 "roles": [RoleOut.model_validate(r) for r in roles]}
-            )
-        )
+    for profile in items:
+        out.append(await _to_out(service, profile))
     return build_page(out, total, page, size)
 
 
@@ -74,19 +79,13 @@ async def create_staff_profile(
     _current_user: CurrentUser,
 ) -> StaffProfileOut:
     profile = await service.create(user_id, payload, actor=_current_user)
-    roles = await service.list_roles_for_user(user_id)
-    base = {c.name: getattr(profile, c.name) for c in profile.__table__.columns}
-    base["roles"] = [RoleOut.model_validate(r) for r in roles]
-    return StaffProfileOut.model_validate(base)
+    return await _to_out(service, profile)
 
 
 @router.get("/{user_id}", response_model=StaffProfileOut, summary="Get staff profile")
 async def get_staff_profile(user_id: uuid.UUID, service: ServiceDep) -> StaffProfileOut:
     profile = await service.get_by_id(user_id)
-    roles = await service.list_roles_for_user(user_id)
-    base = {c.name: getattr(profile, c.name) for c in profile.__table__.columns}
-    base["roles"] = [RoleOut.model_validate(r) for r in roles]
-    return StaffProfileOut.model_validate(base)
+    return await _to_out(service, profile)
 
 
 @router.patch(
@@ -101,10 +100,7 @@ async def update_staff_profile(
     _current_user: CurrentUser,
 ) -> StaffProfileOut:
     profile = await service.update(user_id, payload, actor=_current_user)
-    roles = await service.list_roles_for_user(user_id)
-    base = {c.name: getattr(profile, c.name) for c in profile.__table__.columns}
-    base["roles"] = [RoleOut.model_validate(r) for r in roles]
-    return StaffProfileOut.model_validate(base)
+    return await _to_out(service, profile)
 
 
 @router.delete(
@@ -182,10 +178,6 @@ async def remove_user_role(
     service: ServiceDep,
     _current_user: CurrentUser,
 ) -> None:
-    try:
-        await service.remove_role(user_id, role_id, actor=_current_user)
-    except Exception as exc:
-        logger.exception("remove_role_failed", user_id=str(user_id), role_id=str(role_id))
-        raise HTTPException(
-            status_code=500, detail="Failed to revoke role"
-        ) from exc
+    # Errors raise NotFoundError / ConflictError; the global AppError handler
+    # translates them to the right HTTP status.
+    await service.remove_role(user_id, role_id, actor=_current_user)

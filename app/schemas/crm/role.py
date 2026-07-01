@@ -29,7 +29,3 @@ class RoleOut(BaseModel):
 class RolePatch(BaseModel):
     name: str | None = None
     permissions: dict[str, Any] | None = None
-
-
-class RoleUpdate(RolePatch):
-    pass

@@ -7,7 +7,7 @@ from datetime import date
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import BadRequestError, NotFoundError
+from app.core.exceptions import BadRequestError, ConflictError, NotFoundError
 from app.models.enquiry import Enquiry
 from app.models.lost_enquiry import LostEnquiry
 from app.models.user import User
@@ -20,8 +20,6 @@ from app.services.crm._common import (
     apply_audit_create,
     apply_audit_soft_delete,
     apply_audit_update,
-    commit,
-    flush_and_refresh,
     paginate,
 )
 
@@ -74,9 +72,8 @@ class EnquiryService:
         )
         apply_audit_create(enquiry, actor=actor)
         self.session.add(enquiry)
-        # Flush so the trigger-assigned enquiry_no is populated, then refresh
-        # so created_at / created_by_id server defaults are visible.
-        await flush_and_refresh(self.session, enquiry)
+        await self.session.commit()
+        await self.session.refresh(enquiry)
         return enquiry
 
     async def update(
@@ -98,7 +95,7 @@ class EnquiryService:
         if payload.notes is not None:
             enquiry.notes = payload.notes
         apply_audit_update(enquiry, actor=actor)
-        await commit(self.session)
+        await self.session.commit()
         return enquiry
 
     async def mark_lost(
@@ -114,8 +111,6 @@ class EnquiryService:
 
         existing = await LostEnquiry.get_by_enquiry_id(self.session, enquiry_id)
         if existing is not None:
-            from app.core.exceptions import ConflictError
-
             raise ConflictError(
                 f"Enquiry {enquiry_id} is already marked lost (stage={existing.stage_lost})"
             )
@@ -133,7 +128,6 @@ class EnquiryService:
 
         enquiry.status = "lost"
         enquiry.updated_by_id = actor.id
-        await self.session.flush()
         await self.session.commit()
         await self.session.refresh(enquiry)
         await self.session.refresh(lost)
@@ -142,4 +136,4 @@ class EnquiryService:
     async def soft_delete(self, enquiry_id: uuid.UUID, *, actor: User) -> None:
         enquiry = await self.get_by_id(enquiry_id)
         apply_audit_soft_delete(enquiry, actor=actor)
-        await commit(self.session)
+        await self.session.commit()

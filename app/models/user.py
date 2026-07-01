@@ -61,11 +61,3 @@ class User(Base, UUIDPKMixin, TimestampMixin):
         from sqlalchemy import select
 
         return await session.scalar(select(cls).where(cls.email == email.lower()))
-
-    @classmethod
-    async def email_exists(cls, session: AsyncSession, email: str) -> bool:
-        """Return True if a user with the given email already exists."""
-        from sqlalchemy import select
-
-        result = await session.scalar(select(cls.id).where(cls.email == email.lower()))
-        return result is not None

@@ -44,3 +44,21 @@ class StaffProfile(Base, AuditMixin, SoftDeleteMixin, TimestampMixin):
         from sqlalchemy import select
 
         return await session.scalar(select(cls).where(cls.user_id == user_id))
+
+    @classmethod
+    async def exists_by_employee_code(
+        cls,
+        session: AsyncSession,
+        employee_code: str,
+        *,
+        exclude_user_id: uuid.UUID | None = None,
+    ) -> bool:
+        """Pre-check used by StaffProfileService.create/update. Excludes
+        `exclude_user_id` so an UPDATE that re-uses the same employee_code
+        doesn't false-positive."""
+        from sqlalchemy import select
+
+        stmt = select(cls.user_id).where(cls.employee_code == employee_code)
+        if exclude_user_id is not None:
+            stmt = stmt.where(cls.user_id != exclude_user_id)
+        return (await session.scalar(stmt)) is not None

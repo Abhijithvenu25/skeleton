@@ -54,7 +54,3 @@ class CompanyPatch(BaseModel):
     state: str | None = Field(None, max_length=128)
     country: str | None = Field(None, max_length=128)
     pin: str | None = Field(None, max_length=20)
-
-
-class CompanyUpdate(CompanyPatch):
-    pass

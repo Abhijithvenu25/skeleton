@@ -44,10 +44,6 @@ class StaffProfilePatch(BaseModel):
     joined_on: date | None = None
 
 
-class StaffProfileUpdate(StaffProfilePatch):
-    pass
-
-
 # --- Role assignment (replaces the old singular role_id on the profile) ----
 
 

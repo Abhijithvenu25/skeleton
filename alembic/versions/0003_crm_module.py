@@ -87,10 +87,6 @@ def upgrade() -> None:
         ),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
         sa.Column("updated_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("now()")),
-        sa.CheckConstraint(
-            "name IN ('sales_executive', 'engineer', 'admin', 'owner')",
-            name="ck_roles_name",
-        ),
         sa.UniqueConstraint("name", name="uq_roles_name"),
     )
 

@@ -41,7 +41,3 @@ class ContactPatch(BaseModel):
     mobile: str | None = Field(None, max_length=32)
     designation: str | None = Field(None, max_length=128)
     is_primary: bool | None = None
-
-
-class ContactUpdate(ContactPatch):
-    pass

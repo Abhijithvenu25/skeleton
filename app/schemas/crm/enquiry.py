@@ -61,10 +61,6 @@ class EnquiryPatch(BaseModel):
     notes: str | None = None
 
 
-class EnquiryUpdate(EnquiryPatch):
-    pass
-
-
 class MarkLostIn(BaseModel):
     stage_lost: EnquiryStatus  # only enquiry/site_visit/quotation are valid stages
     reason_lost: str | None = None

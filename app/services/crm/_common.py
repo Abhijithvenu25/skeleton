@@ -3,16 +3,12 @@
 from __future__ import annotations
 
 import math
-import uuid
-from datetime import UTC, datetime
 from typing import Any, TypeVar
 
-from app.core.exceptions import ConflictError
 from app.models.base import _utcnow  # re-use the mixin's clock
 from app.models.user import User
 from app.schemas.common import Page
 from sqlalchemy import func, select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 T = TypeVar("T")
@@ -42,51 +38,8 @@ def apply_audit_soft_delete(model: Any, *, actor: User) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Persistence helpers
+# Pagination helpers
 # ---------------------------------------------------------------------------
-
-
-async def flush_and_refresh(session: AsyncSession, obj: Any) -> None:
-    """Flush + commit + refresh.
-
-    Each HTTP request gets its own `AsyncSession` via `get_session()`; if the
-    handler returns without committing, the transaction rolls back when the
-    session closes. We commit here so that trigger-assigned columns (like
-    `enquiry_no`) — and the row itself — are persisted before the response.
-
-    Use this for single-row `create()` paths. Multi-row transactional methods
-    (mark_lost, add_version) should call `commit()` themselves at the end.
-
-    Translates a unique-constraint violation to ConflictError so the
-    global exception handler returns 409 instead of 500. Services that
-    want a more specific message can wrap their own try/except around
-    this call to override the generic translation.
-    """
-    try:
-        await session.flush()
-        await session.commit()
-    except IntegrityError as exc:
-        await session.rollback()
-        raise ConflictError(
-            "Resource already exists or violates a unique constraint"
-        ) from exc
-    await session.refresh(obj)
-
-
-async def commit(session: AsyncSession) -> None:
-    """Flush + commit. Use after update / soft_delete / multi-row writes.
-
-    Translates a unique-constraint violation to ConflictError. See
-    `flush_and_refresh` for the rationale.
-    """
-    try:
-        await session.flush()
-        await session.commit()
-    except IntegrityError as exc:
-        await session.rollback()
-        raise ConflictError(
-            "Resource already exists or violates a unique constraint"
-        ) from exc
 
 
 def build_page(items: list[Any], total: int, page: int, size: int) -> Page[Any]:
@@ -118,17 +71,3 @@ async def paginate(
     items = list((await session.execute(stmt_items.offset(offset).limit(size))).scalars())
     total = (await session.scalar(stmt_count)) or 0
     return items, int(total)
-
-
-# ---------------------------------------------------------------------------
-# Misc
-# ---------------------------------------------------------------------------
-
-
-def utcnow() -> datetime:
-    return datetime.now(tz=UTC)
-
-
-def to_uuid(value: str | uuid.UUID) -> uuid.UUID:
-    """Accept either a UUID or its string form. Useful for path params."""
-    return value if isinstance(value, uuid.UUID) else uuid.UUID(value)

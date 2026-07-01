@@ -45,7 +45,3 @@ class SiteVisitPatch(BaseModel):
     engineer_id: uuid.UUID | None = None
     status: SiteVisitStatus | None = None
     notes: str | None = None
-
-
-class SiteVisitUpdate(SiteVisitPatch):
-    pass

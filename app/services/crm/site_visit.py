@@ -16,8 +16,6 @@ from app.schemas.crm.site_visit import (
 from app.services.crm._common import (
     apply_audit_create,
     apply_audit_update,
-    commit,
-    flush_and_refresh,
     paginate,
 )
 
@@ -63,7 +61,8 @@ class SiteVisitService:
         )
         apply_audit_create(visit, actor=actor)
         self.session.add(visit)
-        await flush_and_refresh(self.session, visit)
+        await self.session.commit()
+        await self.session.refresh(visit)
         return visit
 
     async def update(
@@ -81,11 +80,11 @@ class SiteVisitService:
         if payload.notes is not None:
             visit.notes = payload.notes
         apply_audit_update(visit, actor=actor)
-        await commit(self.session)
+        await self.session.commit()
         return visit
 
     async def delete(self, visit_id: uuid.UUID, *, actor: User) -> None:
         """Hard-delete (site visits cascade from enquiry — no soft-delete)."""
         visit = await self.get_by_id(visit_id)
         await self.session.delete(visit)
-        await commit(self.session)
+        await self.session.commit()

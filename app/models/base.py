@@ -54,17 +54,14 @@ class ImmutableMixin:
 
 
 class SoftDeleteMixin:
-    """Adds `deleted_at` + a small predicate. Tables using this mixin never
-    get hard-deleted by the app — they get `deleted_at` set, then queries
-    filter `WHERE deleted_at IS NULL`."""
+    """Adds `deleted_at`. Tables using this mixin never get hard-deleted by
+    the app — they get `deleted_at` set, then queries filter
+    `WHERE deleted_at IS NULL`."""
 
     deleted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-
-    def is_deleted(self) -> bool:
-        return self.deleted_at is not None
 
 
 class AuditMixin:

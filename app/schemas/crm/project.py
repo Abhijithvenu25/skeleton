@@ -40,7 +40,3 @@ class ProjectPatch(BaseModel):
     project_type: ProjectType | None = None
     location: str | None = Field(None, max_length=255)
     description: str | None = None
-
-
-class ProjectUpdate(ProjectPatch):
-    pass

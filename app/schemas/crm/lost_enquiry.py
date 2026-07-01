@@ -38,7 +38,3 @@ class LostEnquiryPatch(BaseModel):
     reason_lost: str | None = None
     follow_up_date: date | None = None
     notes: str | None = None
-
-
-class LostEnquiryUpdate(LostEnquiryPatch):
-    pass

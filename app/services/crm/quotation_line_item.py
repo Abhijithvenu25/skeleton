@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import NotFoundError
 from app.models.quotation_line_item import QuotationLineItem
 from app.models.user import User
-from app.services.crm._common import commit, paginate
+from app.services.crm._common import paginate
 
 
 class QuotationLineItemService:
@@ -56,4 +56,4 @@ class QuotationLineItemService:
     async def delete(self, line_id: uuid.UUID, *, actor: User) -> None:
         line = await self.get_by_id(line_id)
         await self.session.delete(line)
-        await commit(self.session)
+        await self.session.commit()

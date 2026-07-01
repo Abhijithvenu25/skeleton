@@ -14,8 +14,6 @@ from app.services.crm._common import (
     apply_audit_create,
     apply_audit_soft_delete,
     apply_audit_update,
-    commit,
-    flush_and_refresh,
     paginate,
 )
 
@@ -46,7 +44,8 @@ class CompanyService:
         company = Company(**payload.model_dump())
         apply_audit_create(company, actor=actor)
         self.session.add(company)
-        await flush_and_refresh(self.session, company)
+        await self.session.commit()
+        await self.session.refresh(company)
         return company
 
     async def update(
@@ -56,10 +55,10 @@ class CompanyService:
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(company, field, value)
         apply_audit_update(company, actor=actor)
-        await commit(self.session)
+        await self.session.commit()
         return company
 
     async def soft_delete(self, company_id: uuid.UUID, *, actor: User) -> None:
         company = await self.get_by_id(company_id)
         apply_audit_soft_delete(company, actor=actor)
-        await commit(self.session)
+        await self.session.commit()

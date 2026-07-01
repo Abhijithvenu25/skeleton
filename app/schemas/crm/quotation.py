@@ -33,7 +33,3 @@ class QuotationOut(BaseModel):
 class QuotationPatch(BaseModel):
     sent_date: date | None = None
     status: QuotationStatus | None = None
-
-
-class QuotationUpdate(QuotationPatch):
-    pass

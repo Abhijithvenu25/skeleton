@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.contact import Contact
 from app.models.user import User
@@ -12,12 +14,8 @@ from app.services.crm._common import (
     apply_audit_create,
     apply_audit_soft_delete,
     apply_audit_update,
-    commit,
-    flush_and_refresh,
     paginate,
 )
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class ContactService:
@@ -50,34 +48,43 @@ class ContactService:
         return contact
 
     async def create(self, payload: ContactIn, *, actor: User) -> Contact:
-        contact = Contact(**payload.model_dump())
-        apply_audit_create(contact, actor=actor)
-        self.session.add(contact)
-        try:
-            await flush_and_refresh(self.session, contact)
-        except IntegrityError as exc:
-            # Most likely: the partial-unique index
-            # `uq_contacts_company_primary` (one primary contact per
-            # active company). Suggestion tells the caller how to
-            # resolve it without just blindly retrying.
+        if payload.is_primary and await Contact.has_active_primary_for_company(
+            self.session, payload.company_id
+        ):
             raise ConflictError(
                 "Company already has a primary contact. "
                 "Set is_primary=false on the new contact, or unset the "
                 "existing primary first, before retrying."
-            ) from exc
+            )
+        contact = Contact(**payload.model_dump())
+        apply_audit_create(contact, actor=actor)
+        self.session.add(contact)
+        await self.session.commit()
+        await self.session.refresh(contact)
         return contact
 
     async def update(
         self, contact_id: uuid.UUID, payload: ContactPatch, *, actor: User
     ) -> Contact:
         contact = await self.get_by_id(contact_id)
+        if (
+            payload.is_primary is True
+            and contact.is_primary is False
+            and await Contact.has_active_primary_for_company(
+                self.session, contact.company_id
+            )
+        ):
+            raise ConflictError(
+                "Company already has a primary contact. "
+                "Unset the existing primary first, before retrying."
+            )
         for field, value in payload.model_dump(exclude_unset=True).items():
             setattr(contact, field, value)
         apply_audit_update(contact, actor=actor)
-        await commit(self.session)
+        await self.session.commit()
         return contact
 
     async def soft_delete(self, contact_id: uuid.UUID, *, actor: User) -> None:
         contact = await self.get_by_id(contact_id)
         apply_audit_soft_delete(contact, actor=actor)
-        await commit(self.session)
+        await self.session.commit()

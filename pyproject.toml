@@ -17,6 +17,7 @@ dependencies = [
     "alembic>=1.13.3",
     "psycopg2-binary>=2.9.10",
     "redis>=5.2.0",
+    "aioboto3>=13.0.0",
     "pyjwt>=2.9.0",
     "passlib[bcrypt]>=1.7.4",
     "bcrypt==4.0.1",
@@ -44,12 +45,12 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/app"]
+packages = ["app"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-src = ["src", "tests"]
+src = ["app", "tests"]
 
 [tool.ruff.lint]
 select = [
@@ -74,7 +75,7 @@ indent-style = "space"
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-mypy_path = "src"
+mypy_path = "."
 ignore_missing_imports = false
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -83,7 +84,7 @@ check_untyped_defs = true
 warn_return_any = true
 
 [[tool.mypy.overrides]]
-module = ["passlib.*", "structlog.*"]
+module = ["passlib.*", "structlog.*", "aioboto3.*", "botocore.*"]
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]

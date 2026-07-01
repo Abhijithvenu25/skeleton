@@ -58,7 +58,7 @@ format:
 	uv run ruff format .
 
 typecheck:
-	uv run mypy src
+	uv run mypy app
 
 clean:
 	rm -rf .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov

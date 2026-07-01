@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-# Local Postgres — must match src/app/core/config.py defaults and .env.local.
+# Local Postgres — must match app/core/config.py defaults and .env.local.
 export POSTGRES_USER="${POSTGRES_USER:-postgres}"
 export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-postgres}"
 export POSTGRES_DB="${POSTGRES_DB:-kalisia}"

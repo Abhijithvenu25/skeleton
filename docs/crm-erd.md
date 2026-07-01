@@ -146,7 +146,7 @@ erDiagram
         int version_no "CHECK > 0"
         numeric amount "CHECK >= 0 (sum of line_total)"
         string terms
-        string file_url "local path under /uploads/quotations/"
+        string file_url "S3 object key / public URL (managed by /api/v1/uploads)"
         uuid created_by_id FK "ON DELETE RESTRICT"
         timestamp created_at
     }

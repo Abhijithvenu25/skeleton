@@ -90,7 +90,7 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-`--reload` watches `src/` and restarts on save.
+`--reload` watches `app/` and restarts on save.
 
 ### 8. Smoke test
 
@@ -210,7 +210,7 @@ make revision m="add x"   # autogenerate revision
 ## Layout
 
 ```
-src/app/
+app/
   api/         # HTTP routers + DI
   core/        # config, security, logging, errors, rate limit
   db/          # async engine + redis client

@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalisia CRM - API Requirements</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@page {
+    size: A4;
+    margin: 20mm;
+    @bottom-right {
+        content: counter(page);
+        font-family: 'Inter', sans-serif;
+        font-size: 8pt;
+        color: #94a3b8;
+    }
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    color: #1f2937;
+    line-height: 1.6;
+    font-size: 10.5pt;
+    background-color: #ffffff;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant Garamond', serif;
+    color: #324435;
+    margin-top: 1.6em;
+    margin-bottom: 0.6em;
+    font-weight: 700;
+}
+
+h1 {
+    font-size: 26pt;
+    border-bottom: 2px solid #b49e78;
+    padding-bottom: 12px;
+    margin-top: 0;
+}
+
+h2 {
+    font-size: 18pt;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 8px;
+    color: #324435;
+    margin-top: 2em;
+}
+
+h3 {
+    font-size: 13.5pt;
+    color: #b49e78;
+    margin-top: 1.5em;
+}
+
+h4 {
+    font-size: 11pt;
+    color: #4b5563;
+}
+
+p, li {
+    font-size: 10pt;
+    color: #374151;
+}
+
+ul, ol {
+    margin-bottom: 1.2em;
+    padding-left: 22px;
+}
+
+li {
+    margin-bottom: 0.4em;
+}
+
+a {
+    color: #b49e78;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Inline code blocks */
+p code, li code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background-color: #f1f5f9;
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-size: 9pt;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+}
+
+/* Fenced Code Containers */
+.code-container {
+    background-color: #0f172a;
+    border-radius: 8px;
+    margin-bottom: 1.5em;
+    border: 1px solid #1e293b;
+    overflow: hidden;
+}
+
+.code-header {
+    background-color: #1e293b;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #334155;
+}
+
+.code-lang {
+    font-size: 8pt;
+    font-family: 'Inter', sans-serif;
+    color: #94a3b8;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+}
+
+.copy-btn {
+    background-color: #334155;
+    border: none;
+    color: #f1f5f9;
+    padding: 4px 10px;
+    font-size: 8pt;
+    font-family: 'Inter', sans-serif;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.15s ease-in-out;
+}
+
+.copy-btn:hover {
+    background-color: #475569;
+}
+
+pre {
+    margin: 0;
+    padding: 16px;
+    overflow-x: auto;
+    background-color: transparent;
+    border: none;
+}
+
+pre code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    color: #e2e8f0;
+    font-size: 8.5pt;
+    line-height: 1.5;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1em;
+    margin-bottom: 2em;
+    font-size: 9pt;
+}
+
+th, td {
+    border: 1px solid #e2e8f0;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+th {
+    background-color: #f8fafc;
+    color: #475569;
+    font-weight: 600;
+    border-bottom: 2px solid #cbd5e1;
+}
+
+tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #e2e8f0;
+    margin: 2.5em 0;
+}
+
+/* Print optimizations */
+@media print {
+    body {
+        font-size: 9.5pt;
+    }
+    h1, h2, h3 {
+        page-break-after: avoid;
+    }
+    .code-container, table {
+        page-break-inside: avoid;
+    }
+    .copy-btn {
+        display: none !important;
+    }
+}
+</style>
+</head>
+<body>
+    <h1 id="backend-api-requirements-payload-specifications">Backend API Requirements &amp; Payload Specifications</h1>
+<h2 id="kalisia-sales-crm-integration">Kalisia Sales CRM Integration</h2>
+<p>This document outlines the API endpoints, request/response payloads, and schema definitions required to connect the Kalisia Sales CRM frontend with the backend service. It is designed to match the current Zustand state management (<code>crmStore.ts</code>) and pages (<code>/dashboard</code>, <code>/enquiries</code>, <code>/site-visits</code>, <code>/quotations</code>, <code>/lost-enquiries</code>).</p>
+<hr />
+<h2 id="1-global-api-standards">1. Global API Standards</h2>
+<ul>
+<li><strong>Base URL</strong>: <code>/api/v1</code> (or as per backend environment configuration)</li>
+<li><strong>Content Type</strong>: <code>application/json</code> for all requests and responses.</li>
+<li><strong>Naming Conventions</strong>: <code>camelCase</code> for JSON payload properties (matching the frontend TS interfaces).</li>
+<li><strong>Date Format</strong>: <code>YYYY-MM-DD</code> strings (e.g., <code>"2026-06-29"</code>).</li>
+<li><strong>Time Format</strong>: <code>HH:MM</code> strings (e.g., <code>"14:30"</code>).</li>
+<li><strong>Authentication</strong>: All endpoints should expect a bearer token (<code>Authorization: Bearer &lt;token&gt;</code>) in headers unless specified otherwise.</li>
+<li><strong>Error Codes</strong>:</li>
+<li><code>400 Bad Request</code>: Validation failure.</li>
+<li><code>401 Unauthorized</code>: Authentication failed.</li>
+<li><code>403 Forbidden</code>: Insufficient permissions.</li>
+<li><code>404 Not Found</code>: Resource not found.</li>
+<li><code>500 Internal Server Error</code>: Server failure.</li>
+</ul>
+<hr />
+<h2 id="2-shared-data-schemas">2. Shared Data Schemas</h2>
+<p>These are the sub-objects utilized across multiple API payloads.</p>
+<h3 id="21-address-schema">2.1 Address Schema</h3>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;address&quot;: &quot;Suite 402, Al Marjan Tower&quot;,
+  &quot;city&quot;: &quot;Manama&quot;,
+  &quot;state&quot;: &quot;Capital Governorate&quot;,
+  &quot;country&quot;: &quot;Bahrain&quot;,
+  &quot;pinCode&quot;: &quot;318&quot;
+}
+</code></pre>
+    </div>
+    
+<h3 id="22-project-details-schema">2.2 Project Details Schema</h3>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;projectName&quot;: &quot;Villa Suites Renovation&quot;,
+  &quot;projectType&quot;: &quot;Commercial Fit-out&quot;, // Enum: see section 3.2
+  &quot;projectLocation&quot;: &quot;Amwaj Islands&quot;,
+  &quot;estimatedBudget&quot;: &quot;120000&quot;, // String/numeric representation of budget
+  &quot;expectedStartDate&quot;: &quot;2026-08-01&quot;,
+  &quot;source&quot;: &quot;Referral&quot;, // Enquiry source channel
+  &quot;priority&quot;: &quot;High&quot;, // Enum: &quot;Low&quot; | &quot;Medium&quot; | &quot;High&quot;
+  &quot;salesExecutive&quot;: &quot;John Doe&quot;
+}
+</code></pre>
+    </div>
+    
+<h3 id="23-description-schema">2.3 Description Schema</h3>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;projectDescription&quot;: &quot;Premium interior fit-out for 5 luxury waterfront guest villas.&quot;,
+  &quot;remarks&quot;: &quot;Client expects extreme premium finish and fast delivery.&quot;
+}
+</code></pre>
+    </div>
+    
+<h3 id="24-attachments-schema">2.4 Attachments Schema</h3>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;boq&quot;: [&quot;https://assets.kalisia.com/files/BOQ_V1_AlMarjan.xlsx&quot;],
+  &quot;drawings&quot;: [&quot;https://assets.kalisia.com/files/Layout_Drawing_Amwaj.dwg&quot;],
+  &quot;photos&quot;: [],
+  &quot;tenderDocuments&quot;: [],
+  &quot;otherFiles&quot;: []
+}
+</code></pre>
+    </div>
+    
+<h3 id="25-pricing-schema">2.5 Pricing Schema</h3>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;materialCost&quot;: 75000,
+  &quot;labourCost&quot;: 25000,
+  &quot;transportation&quot;: 5000,
+  &quot;miscellaneous&quot;: 3000,
+  &quot;discount&quot;: 5000,
+  &quot;tax&quot;: 5150,
+  &quot;grandTotal&quot;: 108150
+}
+</code></pre>
+    </div>
+    
+<hr />
+<h2 id="3-dashboard-api">3. Dashboard API</h2>
+<p>Endpoint to retrieve the unified telemetry counters and indicators for the main dashboard view.</p>
+<h3 id="31-get-dashboard-counters">3.1 Get Dashboard Counters</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>GET</code></li>
+<li><strong>Route</strong>: <code>/dashboard/counters</code></li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;newEnquiries&quot;: 3,
+  &quot;todaysSiteVisits&quot;: 1,
+  &quot;quotationsPending&quot;: 2,
+  &quot;revisionsPending&quot;: 1,
+  &quot;acceptedQuotations&quot;: 2,
+  &quot;lostEnquiries&quot;: 1,
+  &quot;conversionRate&quot;: 67, // Calculated as: (acceptedQuotations / (acceptedQuotations + lostEnquiries)) * 100
+  &quot;revenuePipeline&quot;: 43575.00 // Sum of Grand Totals of all active pending quotations (Draft or Sent)
+}
+</code></pre>
+    </div>
+    
+<hr />
+<h2 id="4-sales-enquiries-api">4. Sales Enquiries API</h2>
+<p>Handles enquiries from creation, assignment, progression to lost, or upgrading to a site visit.</p>
+<h3 id="41-list-enquiries">4.1 List Enquiries</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>GET</code></li>
+<li><strong>Route</strong>: <code>/enquiries</code></li>
+<li><strong>Query Parameters (Filters &amp; Pagination)</strong>:</li>
+<li><code>search</code> (string, optional) - Filters by company name, contact person, or enquiry number.</li>
+<li><code>status</code> (string, optional) - Enum: <code>ALL</code>, <code>Enquiry</code>, <code>Site Visit</code>, <code>Quotation</code>, <code>Accepted</code>, <code>Lost</code></li>
+<li><code>priority</code> (string, optional) - Enum: <code>ALL</code>, <code>Low</code>, <code>Medium</code>, <code>High</code></li>
+<li><code>salesExecutive</code> (string, optional) - Filter by assigned executive.</li>
+<li><code>projectType</code> (string, optional) - Filter by project type.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">[
+  {
+    &quot;enquiryNo&quot;: &quot;ENQ-001&quot;,
+    &quot;enquiryDate&quot;: &quot;2026-06-20&quot;,
+    &quot;companyName&quot;: &quot;Al Marjan Hospitality&quot;,
+    &quot;contactPerson&quot;: &quot;Fatima Al Mansoor&quot;,
+    &quot;designation&quot;: &quot;Project Director&quot;,
+    &quot;mobile&quot;: &quot;+973 3948 2910&quot;,
+    &quot;alternateMobile&quot;: &quot;+973 1756 0000&quot;,
+    &quot;email&quot;: &quot;fatima@almarjan.bh&quot;,
+    &quot;website&quot;: &quot;www.almarjan.bh&quot;,
+    &quot;address&quot;: {
+      &quot;address&quot;: &quot;Suite 402, Al Marjan Tower&quot;,
+      &quot;city&quot;: &quot;Manama&quot;,
+      &quot;state&quot;: &quot;Capital Governorate&quot;,
+      &quot;country&quot;: &quot;Bahrain&quot;,
+      &quot;pinCode&quot;: &quot;318&quot;
+    },
+    &quot;projectDetails&quot;: {
+      &quot;projectName&quot;: &quot;Villa Suites Renovation&quot;,
+      &quot;projectType&quot;: &quot;Commercial Fit-out&quot;,
+      &quot;projectLocation&quot;: &quot;Amwaj Islands&quot;,
+      &quot;estimatedBudget&quot;: &quot;120000&quot;,
+      &quot;expectedStartDate&quot;: &quot;2026-08-01&quot;,
+      &quot;source&quot;: &quot;Referral&quot;,
+      &quot;priority&quot;: &quot;High&quot;,
+      &quot;salesExecutive&quot;: &quot;John Doe&quot;
+    },
+    &quot;description&quot;: {
+      &quot;projectDescription&quot;: &quot;Premium interior fit-out for 5 luxury waterfront guest villas.&quot;,
+      &quot;remarks&quot;: &quot;Client expects extreme premium finish.&quot;
+    },
+    &quot;attachments&quot;: {
+      &quot;boq&quot;: [&quot;BOQ_V1_AlMarjan.xlsx&quot;],
+      &quot;drawings&quot;: [&quot;Layout_Drawing.dwg&quot;],
+      &quot;photos&quot;: [],
+      &quot;tenderDocuments&quot;: [],
+      &quot;otherFiles&quot;: []
+    },
+    &quot;status&quot;: &quot;Accepted&quot;,
+    &quot;notes&quot;: [
+      &quot;Met with Fatima on-site. Very positive feedback.&quot;,
+      &quot;Material samples presented on 22nd June.&quot;
+    ]
+  }
+]
+</code></pre>
+    </div>
+    
+<h3 id="42-create-enquiry">4.2 Create Enquiry</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>POST</code></li>
+<li><strong>Route</strong>: <code>/enquiries</code></li>
+<li><strong>Request Payload</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;companyName&quot;: &quot;Nirvana Spa &amp; Wellness&quot;,
+  &quot;contactPerson&quot;: &quot;Zahra Baluch&quot;,
+  &quot;designation&quot;: &quot;Founder &amp; CEO&quot;,
+  &quot;mobile&quot;: &quot;+973 3619 4029&quot;,
+  &quot;alternateMobile&quot;: &quot;&quot;,
+  &quot;email&quot;: &quot;zahra@nirvanawellness.com&quot;,
+  &quot;website&quot;: &quot;&quot;,
+  &quot;address&quot;: {
+    &quot;address&quot;: &quot;Villa 12, Compound 3, Riffa Views&quot;,
+    &quot;city&quot;: &quot;Riffa&quot;,
+    &quot;state&quot;: &quot;Southern Governorate&quot;,
+    &quot;country&quot;: &quot;Bahrain&quot;,
+    &quot;pinCode&quot;: &quot;911&quot;
+  },
+  &quot;projectDetails&quot;: {
+    &quot;projectName&quot;: &quot;Spa Extension &amp; Wet Area&quot;,
+    &quot;projectType&quot;: &quot;New Construction&quot;,
+    &quot;projectLocation&quot;: &quot;Riffa Views&quot;,
+    &quot;estimatedBudget&quot;: &quot;85000&quot;,
+    &quot;expectedStartDate&quot;: &quot;2026-10-01&quot;,
+    &quot;source&quot;: &quot;Social Media&quot;,
+    &quot;priority&quot;: &quot;High&quot;,
+    &quot;salesExecutive&quot;: &quot;John Doe&quot;
+  },
+  &quot;description&quot;: {
+    &quot;projectDescription&quot;: &quot;Construction of a brand new thermal block.&quot;,
+    &quot;remarks&quot;: &quot;Acoustics and moisture control are critical.&quot;
+  },
+  &quot;attachments&quot;: {
+    &quot;boq&quot;: [],
+    &quot;drawings&quot;: [],
+    &quot;photos&quot;: [],
+    &quot;tenderDocuments&quot;: [],
+    &quot;otherFiles&quot;: []
+  }
+}
+</code></pre>
+    </div>
+    
+<ul>
+<li><strong>Response Payload (<code>201 Created</code>)</strong>:</li>
+<li>Returns the fully generated Enquiry record, including server-assigned <code>enquiryNo</code> (e.g. <code>ENQ-006</code>), creation date <code>enquiryDate</code>, <code>status</code> initialized to <code>"Enquiry"</code>, and an empty <code>notes</code> array.</li>
+</ul>
+<h3 id="43-update-enquiry">4.3 Update Enquiry</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>PUT</code> or <code>PATCH</code></li>
+<li><strong>Route</strong>: <code>/enquiries/:enquiryNo</code></li>
+<li><strong>Request Payload</strong>:</li>
+<li>A partial object containing any updated fields from the schema.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Returns the updated Enquiry record.</li>
+</ul>
+<h3 id="44-delete-enquiry">4.4 Delete Enquiry</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>DELETE</code></li>
+<li><strong>Route</strong>: <code>/enquiries/:enquiryNo</code></li>
+<li><strong>Response Payload (<code>200 OK</code> or <code>204 No Content</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{ &quot;message&quot;: &quot;Enquiry ENQ-001 deleted successfully.&quot; }
+</code></pre>
+    </div>
+    
+<h3 id="45-add-enquiry-note">4.5 Add Enquiry Note</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>POST</code></li>
+<li><strong>Route</strong>: <code>/enquiries/:enquiryNo/notes</code></li>
+<li><strong>Request Payload</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;note&quot;: &quot;Spoke to customer. Budget confirmed.&quot;
+}
+</code></pre>
+    </div>
+    
+<ul>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Returns the updated list of notes:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;notes&quot;: [
+    &quot;Met with Fatima on-site. Very positive feedback.&quot;,
+    &quot;Spoke to customer. Budget confirmed.&quot;
+  ]
+}
+</code></pre>
+    </div>
+    
+<h3 id="46-mark-enquiry-as-lost">4.6 Mark Enquiry as Lost</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>POST</code></li>
+<li><strong>Route</strong>: <code>/enquiries/:enquiryNo/lost</code></li>
+<li><strong>Request Payload</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;lostStage&quot;: &quot;Enquiry&quot;, // Enum: &quot;Enquiry&quot; | &quot;Site Visit&quot; | &quot;Quotation&quot;
+  &quot;lostReason&quot;: &quot;Price Too High&quot;, // Enum: see section 7.1
+  &quot;remarks&quot;: &quot;Client found a cheaper alternative locally.&quot;,
+  &quot;followUpDate&quot;: &quot;2026-12-01&quot;, // Optional
+  &quot;canReopen&quot;: true
+}
+</code></pre>
+    </div>
+    
+<ul>
+<li><strong>Backend Action</strong>:</li>
+<li>Updates Enquiry status to <code>"Lost"</code>.</li>
+<li>Creates a record in the <code>LostEnquiry</code> database table.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Returns the generated <code>LostEnquiry</code> record.</li>
+</ul>
+<hr />
+<h2 id="5-site-visits-api">5. Site Visits API</h2>
+<p>Handles scheduling, inspections reports, and next step execution.</p>
+<h3 id="51-list-site-visits">5.1 List Site Visits</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>GET</code></li>
+<li><strong>Route</strong>: <code>/site-visits</code></li>
+<li><strong>Query Parameters</strong>:</li>
+<li><code>date</code> (string, optional) - Match specific visit date (<code>YYYY-MM-DD</code>).</li>
+<li><code>engineer</code> (string, optional) - Filter by visiting engineer.</li>
+<li><code>status</code> (string, optional) - Enum: <code>ALL</code>, <code>Scheduled</code>, <code>Completed</code>, <code>Lost</code>.</li>
+<li><code>salesExecutive</code> (string, optional) - Filter by related sales rep.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">[
+  {
+    &quot;visitNo&quot;: &quot;VIS-001&quot;,
+    &quot;enquiryNo&quot;: &quot;ENQ-001&quot;,
+    &quot;companyName&quot;: &quot;Al Marjan Hospitality&quot;,
+    &quot;visitDate&quot;: &quot;2026-06-22&quot;,
+    &quot;visitTime&quot;: &quot;10:30&quot;,
+    &quot;engineer&quot;: &quot;Alex Rivera&quot;,
+    &quot;salesExecutive&quot;: &quot;John Doe&quot;,
+    &quot;siteAddress&quot;: &quot;Amwaj Islands, Villa 410&quot;,
+    &quot;googleMapsLink&quot;: &quot;https://maps.google.com/?q=26.28,50.66&quot;,
+    &quot;clientRepresentative&quot;: &quot;Fatima Al Mansoor&quot;,
+    &quot;observations&quot;: {
+      &quot;requirements&quot;: &quot;Interior fit-out for 5 guest villas. Structural alterations in lobby required.&quot;,
+      &quot;measurements&quot;: &quot;Villa dimensions verified. Ceiling height 3.2m in rooms, 4.5m in lobby.&quot;,
+      &quot;existingConditions&quot;: &quot;Shell and core. Electrical supply installed.&quot;,
+      &quot;challenges&quot;: &quot;Narrow stairs to the first floor. Heavy stone bathtubs.&quot;,
+      &quot;recommendations&quot;: &quot;Cranage should be scheduled for day 4.&quot;
+    },
+    &quot;uploads&quot;: {
+      &quot;photos&quot;: [&quot;https://assets.kalisia.com/site/VIS-001/stairs.jpg&quot;],
+      &quot;videos&quot;: [],
+      &quot;drawings&quot;: [&quot;https://assets.kalisia.com/site/VIS-001/layout_check.pdf&quot;],
+      &quot;measurementSheets&quot;: [&quot;https://assets.kalisia.com/site/VIS-001/measurements.xlsx&quot;]
+    },
+    &quot;nextAction&quot;: &quot;Prepare Quotation&quot;,
+    &quot;status&quot;: &quot;Completed&quot;
+  }
+]
+</code></pre>
+    </div>
+    
+<h3 id="52-schedule-site-visit">5.2 Schedule Site Visit</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>POST</code></li>
+<li><strong>Route</strong>: <code>/site-visits</code></li>
+<li><strong>Request Payload</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;enquiryNo&quot;: &quot;ENQ-003&quot;,
+  &quot;companyName&quot;: &quot;Nirvana Spa &amp; Wellness&quot;,
+  &quot;visitDate&quot;: &quot;2026-06-27&quot;,
+  &quot;visitTime&quot;: &quot;09:30&quot;,
+  &quot;engineer&quot;: &quot;David Chen&quot;,
+  &quot;salesExecutive&quot;: &quot;John Doe&quot;,
+  &quot;siteAddress&quot;: &quot;Villa 12, Compound 3, Riffa Views&quot;,
+  &quot;googleMapsLink&quot;: &quot;https://maps.google.com/?q=26.12,50.56&quot;,
+  &quot;clientRepresentative&quot;: &quot;Zahra Baluch&quot;,
+  &quot;observations&quot;: {
+    &quot;requirements&quot;: &quot;&quot;,
+    &quot;measurements&quot;: &quot;&quot;,
+    &quot;existingConditions&quot;: &quot;&quot;,
+    &quot;challenges&quot;: &quot;&quot;,
+    &quot;recommendations&quot;: &quot;&quot;
+  },
+  &quot;uploads&quot;: {
+    &quot;photos&quot;: [],
+    &quot;videos&quot;: [],
+    &quot;drawings&quot;: [],
+    &quot;measurementSheets&quot;: []
+  },
+  &quot;nextAction&quot;: &quot;Prepare Quotation&quot;
+}
+</code></pre>
+    </div>
+    
+<ul>
+<li><strong>Backend Action</strong>:</li>
+<li>Inserts new visit with generated ID (e.g. <code>VIS-004</code>) and status <code>"Scheduled"</code>.</li>
+<li><strong>Important</strong>: Must automatically update the associated Enquiry's status to <code>"Site Visit"</code> if it is currently <code>"Enquiry"</code>.</li>
+<li><strong>Response Payload (<code>201 Created</code>)</strong>:</li>
+<li>Returns the newly scheduled Site Visit object.</li>
+</ul>
+<h3 id="53-submit-site-visit-report-update">5.3 Submit Site Visit Report (Update)</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>PUT</code> or <code>PATCH</code></li>
+<li><strong>Route</strong>: <code>/site-visits/:visitNo</code></li>
+<li><strong>Request Payload</strong>:</li>
+<li>Same format as standard site visit, containing filled-in observation records and media uploads.</li>
+<li><strong>Backend Action</strong>:</li>
+<li>Updates the details and automatically updates the status of the visit to <code>"Completed"</code>.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Returns the completed Site Visit object.</li>
+</ul>
+<h3 id="54-delete-site-visit">5.4 Delete Site Visit</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>DELETE</code></li>
+<li><strong>Route</strong>: <code>/site-visits/:visitNo</code></li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{ &quot;message&quot;: &quot;Site visit VIS-001 deleted.&quot; }
+</code></pre>
+    </div>
+    
+<hr />
+<h2 id="6-quotations-api">6. Quotations API</h2>
+<p>Manages drafts, pricing components, document configurations, sending, client actions (Accepted/Rejected), and multi-version revisions.</p>
+<h3 id="61-list-quotations">6.1 List Quotations</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>GET</code></li>
+<li><strong>Route</strong>: <code>/quotations</code></li>
+<li><strong>Query Parameters</strong>:</li>
+<li><code>search</code> (string, optional) - Filters by company name, enquiry number, or quotation number.</li>
+<li><code>status</code> (string, optional) - Enum: <code>ALL</code>, <code>Draft</code>, <code>Sent</code>, <code>Accepted</code>, <code>Rejected</code>, <code>Lost</code>.</li>
+<li><code>date</code> (string, optional) - Filters by quote date.</li>
+<li><code>salesExecutive</code> (string, optional) - Filters by assigned executive.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">[
+  {
+    &quot;quotationNo&quot;: &quot;QT-001&quot;,
+    &quot;quotationDate&quot;: &quot;2026-06-23&quot;,
+    &quot;validUntil&quot;: &quot;2026-07-23&quot;,
+    &quot;enquiryNo&quot;: &quot;ENQ-001&quot;,
+    &quot;siteVisitNo&quot;: &quot;VIS-001&quot;,
+    &quot;currentVersion&quot;: 2,
+    &quot;pricing&quot;: {
+      &quot;materialCost&quot;: 75000,
+      &quot;labourCost&quot;: 25000,
+      &quot;transportation&quot;: 5000,
+      &quot;miscellaneous&quot;: 3000,
+      &quot;discount&quot;: 5000,
+      &quot;tax&quot;: 5150,
+      &quot;grandTotal&quot;: 108150
+    },
+    &quot;termsAndConditions&quot;: &quot;1. 50% Advance with order. \n2. Progressive billing.&quot;,
+    &quot;remarks&quot;: &quot;Negotiated discount applied.&quot;,
+    &quot;uploads&quot;: {
+      &quot;quotationPdf&quot;: [&quot;QT-001-V2_AlMarjan.pdf&quot;],
+      &quot;supportingDocuments&quot;: []
+    },
+    &quot;status&quot;: &quot;Accepted&quot;,
+    &quot;pricingMethod&quot;: &quot;manual&quot;, // Enum: &quot;manual&quot; | &quot;template&quot;
+    &quot;attachedTemplate&quot;: &quot;Standard Fit-out Template&quot;, // Optional
+    &quot;selectedThemeId&quot;: &quot;theme-1&quot;,
+    &quot;revisions&quot;: [
+      {
+        &quot;version&quot;: 1,
+        &quot;revisionDate&quot;: &quot;2026-06-23&quot;,
+        &quot;revisionReason&quot;: &quot;Initial proposal&quot;,
+        &quot;materialCost&quot;: 80000,
+        &quot;labourCost&quot;: 28000,
+        &quot;transportation&quot;: 5000,
+        &quot;miscellaneous&quot;: 3000,
+        &quot;discount&quot;: 0,
+        &quot;tax&quot;: 5800,
+        &quot;grandTotal&quot;: 121800,
+        &quot;remarks&quot;: &quot;Submitted to client.&quot;,
+        &quot;pricingMethod&quot;: &quot;manual&quot;,
+        &quot;selectedThemeId&quot;: &quot;theme-1&quot;
+      }
+    ]
+  }
+]
+</code></pre>
+    </div>
+    
+<h3 id="62-create-quotation-draft">6.2 Create Quotation Draft</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>POST</code></li>
+<li><strong>Route</strong>: <code>/quotations</code></li>
+<li><strong>Request Payload</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;quotationDate&quot;: &quot;2026-06-23&quot;,
+  &quot;validUntil&quot;: &quot;2026-07-23&quot;,
+  &quot;enquiryNo&quot;: &quot;ENQ-001&quot;,
+  &quot;siteVisitNo&quot;: &quot;VIS-001&quot;, // Optional
+  &quot;pricing&quot;: {
+    &quot;materialCost&quot;: 80000,
+    &quot;labourCost&quot;: 28000,
+    &quot;transportation&quot;: 5000,
+    &quot;miscellaneous&quot;: 3000,
+    &quot;discount&quot;: 0,
+    &quot;tax&quot;: 5800,
+    &quot;grandTotal&quot;: 121800
+  },
+  &quot;termsAndConditions&quot;: &quot;1. 50% Advance with Purchase Order.&quot;,
+  &quot;remarks&quot;: &quot;Initial draft details.&quot;,
+  &quot;pricingMethod&quot;: &quot;manual&quot;,
+  &quot;attachedTemplate&quot;: &quot;&quot;,
+  &quot;selectedThemeId&quot;: &quot;theme-1&quot;
+}
+</code></pre>
+    </div>
+    
+<ul>
+<li><strong>Backend Action</strong>:</li>
+<li>Inserts the new quotation. Status initialized as <code>"Draft"</code>.</li>
+<li><code>currentVersion</code> initialized to <code>1</code>.</li>
+<li>Creates the initial version inside the nested <code>revisions</code> list.</li>
+<li><strong>Response Payload (<code>201 Created</code>)</strong>:</li>
+<li>Returns the newly created Quotation object.</li>
+</ul>
+<h3 id="63-update-quotation-draftsent">6.3 Update Quotation (Draft/Sent)</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>PUT</code> or <code>PATCH</code></li>
+<li><strong>Route</strong>: <code>/quotations/:quotationNo</code></li>
+<li><strong>Request Payload</strong>:</li>
+<li>Allows editing pricing, validity, terms, active theme, and remarks.</li>
+<li>Can also accept a <code>status</code> change (e.g. status upgraded to <code>"Sent"</code> or <code>"Accepted"</code>).</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Returns the updated Quotation.</li>
+</ul>
+<h3 id="64-create-quotation-revision">6.4 Create Quotation Revision</h3>
+<p>When negotiating prices, the backend must save the current state as a revision and increment the quotation version.
+- <strong>HTTP Method</strong>: <code>POST</code>
+- <strong>Route</strong>: <code>/quotations/:quotationNo/revisions</code>
+- <strong>Request Payload</strong>:</p>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;revisionReason&quot;: &quot;Negotiated discount and scope adjustment&quot;,
+  &quot;remarks&quot;: &quot;Active revision version.&quot;,
+  &quot;materialCost&quot;: 75000,
+  &quot;labourCost&quot;: 25000,
+  &quot;transportation&quot;: 5000,
+  &quot;miscellaneous&quot;: 3000,
+  &quot;discount&quot;: 5000,
+  &quot;tax&quot;: 5150,
+  &quot;grandTotal&quot;: 108150,
+  &quot;pricingMethod&quot;: &quot;manual&quot;,
+  &quot;attachedTemplate&quot;: &quot;&quot;,
+  &quot;selectedThemeId&quot;: &quot;theme-1&quot;
+}
+</code></pre>
+    </div>
+    
+<ul>
+<li><strong>Backend Action</strong>:</li>
+<li>Retrieve current quotation.</li>
+<li>Set the current details of the quotation as a new entry in its <code>revisions</code> list with version number matching the previous <code>currentVersion</code>.</li>
+<li>Increment <code>currentVersion</code> by 1.</li>
+<li>Overwrite the main Quotation's <code>pricing</code> block and active fields with the parameters supplied in the request.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Returns the updated parent Quotation object containing the new revision history and incremented version.</li>
+</ul>
+<h3 id="65-activate-specific-revision-version">6.5 Activate Specific Revision Version</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>POST</code></li>
+<li><strong>Route</strong>: <code>/quotations/:quotationNo/revisions/:version/activate</code></li>
+<li><strong>Request Payload</strong>: (None required)</li>
+<li><strong>Backend Action</strong>:</li>
+<li>Restores the primary pricing and configuration fields of the quotation to match the data stored in the specified version entry of the revisions array.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Returns the updated parent Quotation object.</li>
+</ul>
+<h3 id="66-delete-revision-version">6.6 Delete Revision Version</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>DELETE</code></li>
+<li><strong>Route</strong>: <code>/quotations/:quotationNo/revisions/:version</code></li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Returns updated parent Quotation object.</li>
+</ul>
+<h3 id="67-delete-quotation">6.7 Delete Quotation</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>DELETE</code></li>
+<li><strong>Route</strong>: <code>/quotations/:quotationNo</code></li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{ &quot;message&quot;: &quot;Quotation deleted.&quot; }
+</code></pre>
+    </div>
+    
+<hr />
+<h2 id="7-lost-opportunities-api">7. Lost Opportunities API</h2>
+<p>Tracks closed-lost prospects and supports reopening them.</p>
+<h3 id="71-list-lost-enquiries">7.1 List Lost Enquiries</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>GET</code></li>
+<li><strong>Route</strong>: <code>/lost-enquiries</code></li>
+<li><strong>Query Parameters</strong>:</li>
+<li><code>search</code> (string, optional) - Filters by company name, enquiry number, or reason.</li>
+<li><code>lostStage</code> (string, optional) - Stage when lost. Enum: <code>ALL</code>, <code>Enquiry</code>, <code>Site Visit</code>, <code>Quotation</code>.</li>
+<li><code>lostReason</code> (string, optional) - Enum: <code>ALL</code>, <code>Price Too High</code>, <code>Competitor Won</code>, <code>Project Cancelled</code>, <code>Budget Issue</code>, <code>No Response</code>, <code>Duplicate</code>, <code>Client Not Interested</code>, <code>Scope Changed</code>, <code>Other</code>.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">[
+  {
+    &quot;lostNo&quot;: &quot;LST-001&quot;,
+    &quot;enquiryNo&quot;: &quot;ENQ-004&quot;,
+    &quot;companyName&quot;: &quot;Capital Tower Offices&quot;, // Note: frontend uses lost.companyName &amp; lost.company. Backend should standardize.
+    &quot;contactPerson&quot;: &quot;Robert Chen&quot;,
+    &quot;project&quot;: &quot;Level 14 Fit-out&quot;,
+    &quot;lostStage&quot;: &quot;Quotation&quot;,
+    &quot;lostDate&quot;: &quot;2026-06-25&quot;,
+    &quot;lostReason&quot;: &quot;Price Too High&quot;,
+    &quot;remarks&quot;: &quot;Client went with local contractor offering 25% lower price.&quot;,
+    &quot;followUpDate&quot;: &quot;2026-12-01&quot;,
+    &quot;canReopen&quot;: true,
+    &quot;originalStatus&quot;: &quot;Quotation&quot;
+  }
+]
+</code></pre>
+    </div>
+    
+<h3 id="72-reopen-lost-opportunity">7.2 Reopen Lost Opportunity</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>POST</code></li>
+<li><strong>Route</strong>: <code>/lost-enquiries/:enquiryNo/reopen</code></li>
+<li><strong>Request Payload</strong>: (None required)</li>
+<li><strong>Backend Action</strong>:</li>
+<li>Locates the related Enquiry.</li>
+<li>Changes Enquiry status back to its <code>originalStatus</code> (e.g. <code>"Quotation"</code> or <code>"Enquiry"</code>).</li>
+<li>Deletes the <code>LostEnquiry</code> log record.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;message&quot;: &quot;Opportunity reopened successfully.&quot;,
+  &quot;enquiryNo&quot;: &quot;ENQ-004&quot;,
+  &quot;restoredStatus&quot;: &quot;Quotation&quot;
+}
+</code></pre>
+    </div>
+    
+<h3 id="73-delete-lost-log">7.3 Delete Lost Log</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>DELETE</code></li>
+<li><strong>Route</strong>: <code>/lost-enquiries/:lostNo</code></li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{ &quot;message&quot;: &quot;Lost opportunity retention log deleted.&quot; }
+</code></pre>
+    </div>
+    
+<hr />
+<h2 id="8-settings-themes-api">8. Settings &amp; Themes API</h2>
+<p>Configures visual style presets for quotation output templates.</p>
+<h3 id="81-list-themes">8.1 List Themes</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>GET</code></li>
+<li><strong>Route</strong>: <code>/settings/themes</code></li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">[
+  {
+    &quot;id&quot;: &quot;theme-1&quot;,
+    &quot;name&quot;: &quot;Kalisia Signature&quot;,
+    &quot;colors&quot;: {
+      &quot;primary&quot;: &quot;#324435&quot;,
+      &quot;secondary&quot;: &quot;#b49e78&quot;,
+      &quot;accent&quot;: &quot;#d1c7bd&quot;,
+      &quot;text&quot;: &quot;#1f2937&quot;,
+      &quot;background&quot;: &quot;#fcfbfa&quot;
+    },
+    &quot;typography&quot;: {
+      &quot;fontFamily&quot;: &quot;Cormorant Garamond&quot;
+    },
+    &quot;logoUrl&quot;: &quot;/images/logo.png&quot;,
+    &quot;isSystem&quot;: true
+  }
+]
+</code></pre>
+    </div>
+    
+<h3 id="82-create-custom-theme">8.2 Create Custom Theme</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>POST</code></li>
+<li><strong>Route</strong>: <code>/settings/themes</code></li>
+<li><strong>Request Payload</strong>:</li>
+<li>Object of <code>QuotationTheme</code> omitting <code>id</code> and <code>isSystem</code> (defaults to false).</li>
+<li><strong>Response Payload (<code>201 Created</code>)</strong>:</li>
+<li>Returns created theme with generated <code>id</code>.</li>
+</ul>
+<h3 id="83-update-custom-theme">8.3 Update Custom Theme</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>PUT</code></li>
+<li><strong>Route</strong>: <code>/settings/themes/:id</code></li>
+<li><strong>Request Payload</strong>:</li>
+<li>Partial theme settings. System themes (<code>isSystem: true</code>) must block updates.</li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Returns updated theme.</li>
+</ul>
+<h3 id="84-delete-custom-theme">8.4 Delete Custom Theme</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>DELETE</code></li>
+<li><strong>Route</strong>: <code>/settings/themes/:id</code></li>
+<li><strong>Response Payload (<code>200 OK</code>)</strong>:</li>
+<li>Deletes the theme. System themes must block deletion.</li>
+</ul>
+<hr />
+<h2 id="9-file-upload-utility-api">9. File Upload Utility API</h2>
+<p>Provides central uploading for document controls (e.g. BOQ, photos, drawings, final PDFs).</p>
+<h3 id="91-upload-media-file">9.1 Upload Media File</h3>
+<ul>
+<li><strong>HTTP Method</strong>: <code>POST</code></li>
+<li><strong>Route</strong>: <code>/upload</code></li>
+<li><strong>Headers</strong>: <code>Content-Type: multipart/form-data</code></li>
+<li><strong>Request Parameters</strong>:</li>
+<li><code>file</code> (Binary File data)</li>
+<li><code>category</code> (string, optional) - e.g. <code>"boq"</code>, <code>"drawings"</code>, <code>"photos"</code>, <code>"pdf"</code> for organizing folders in object storage.</li>
+<li><strong>Response Payload (<code>201 Created</code>)</strong>:</li>
+</ul>
+
+    <div class="code-container">
+        <div class="code-header">
+            <span class="code-lang">JSON Payload / Schema</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copy Code</button>
+        </div>
+        <pre><code class="language-json">{
+  &quot;url&quot;: &quot;https://assets.kalisia.com/uploads/2026/06/Layout_Drawing_Amwaj_7193a.dwg&quot;,
+  &quot;fileName&quot;: &quot;Layout_Drawing_Amwaj.dwg&quot;,
+  &quot;sizeBytes&quot;: 204850,
+  &quot;mimeType&quot;: &quot;image/vnd.dwg&quot;
+}
+</code></pre>
+    </div>
+    
+    
+<script>
+function copyCode(button) {
+    const pre = button.parentElement.nextElementSibling;
+    const code = pre.querySelector('code').innerText;
+    
+    // Fallback copy logic
+    const tempTextArea = document.createElement("textarea");
+    tempTextArea.value = code;
+    document.body.appendChild(tempTextArea);
+    tempTextArea.select();
+    try {
+        document.execCommand("copy");
+        button.innerText = 'Copied!';
+        button.style.backgroundColor = '#10b981'; // Green confirmation color
+        setTimeout(() => {
+            button.innerText = 'Copy Code';
+            button.style.backgroundColor = '#334155';
+        }, 2000);
+    } catch (err) {
+        console.error("Fallback copy failed", err);
+    }
+    document.body.removeChild(tempTextArea);
+}
+</script>
+
+</body>
+</html>

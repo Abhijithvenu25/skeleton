@@ -49,17 +49,37 @@ class RoleService:
 
     # ---- CRUD ---------------------------------------------------------------
 
-    async def create(self, name: str, permissions: dict[str, Any] | None) -> Role:
+    async def create(
+        self,
+        name: str,
+        permissions: dict[str, Any] | None,
+        description: str | None = None,
+    ) -> Role:
         normalized = self._normalize(name)
         if await Role.exists_by_name(self.session, normalized):
             raise ConflictError(f"Role '{normalized}' already exists")
-        role = Role(name=normalized, permissions=permissions or {})
+        # Compute the next business code as `R-<max_suffix + 1>`. Two
+        # concurrent inserts can both compute the same code; the UNIQUE
+        # index `uq_roles_role_code` is the authoritative safety net —
+        # the IntegrityError catch below translates the collision into a
+        # clean 409 (matching the pre-check + IntegrityError pattern
+        # already used for `name`).
+        next_n = (await Role.max_role_code_suffix(self.session)) + 1
+        role_code = f"R-{next_n}"
+        role = Role(
+            name=normalized,
+            permissions=permissions or {},
+            role_code=role_code,
+            description=description,
+        )
         self.session.add(role)
         try:
             await self.session.commit()
             await self.session.refresh(role)
         except IntegrityError as exc:
-            # Race: another insert landed between our pre-check and commit.
+            # Race: another insert won the code-generation race OR
+            # collided on `name`. Roll back either way and let the global
+            # handler map `uq_roles_role_code` -> 409 if it's that.
             await self.session.rollback()
             raise ConflictError(f"Role '{normalized}' already exists") from exc
         return role
@@ -88,6 +108,7 @@ class RoleService:
         role_id: uuid.UUID,
         name: str | None = None,
         permissions: dict[str, Any] | None = None,
+        description: str | None = None,
     ) -> Role:
         role = await self._get_or_404(role_id)
         normalized: str | None = None
@@ -98,6 +119,10 @@ class RoleService:
             role.name = normalized
         if permissions is not None:
             role.permissions = permissions
+        # `description` is patchable separately. Clients can clear it by
+        # passing null; passing the field unset leaves it as-is.
+        if description is not None:
+            role.description = description
         try:
             await self.session.commit()
             await self.session.refresh(role)

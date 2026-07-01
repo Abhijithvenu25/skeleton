@@ -20,15 +20,16 @@ logger = get_logger(__name__)
 # the original Postgres error. Unknown constraints fall through to a
 # generic 409 with the constraint name in `details`.
 _INTEGRITY_CONSTRAINT_MESSAGES: dict[str, str] = {
-    "uq_roles_name":                    "Role '{value}' already exists",
-    "ix_users_email":                   "Email already registered",
-    "uq_staff_profiles_employee_code":   "Employee code '{value}' already in use",
-    "uq_enquiries_enquiry_no":           "Enquiry number collision (retry the request)",
-    "uq_site_visits_visit_no":          "Site-visit number collision (retry the request)",
-    "uq_quotations_quote_no":            "Quotation number collision (retry the request)",
+    "uq_roles_name": "Role '{value}' already exists",
+    "uq_roles_role_code": "Role code '{value}' already exists",
+    "ix_users_email": "Email already registered",
+    "uq_staff_profiles_employee_code": "Employee code '{value}' already in use",
+    "uq_enquiries_enquiry_no": "Enquiry number collision (retry the request)",
+    "uq_site_visits_visit_no": "Site-visit number collision (retry the request)",
+    "uq_quotations_quote_no": "Quotation number collision (retry the request)",
     "uq_quotation_versions_quote_version": "Quotation version already exists",
-    "uq_lost_enquiries_enquiry_id":     "Lost enquiry already exists for this enquiry",
-    "uq_contacts_company_primary":      "Company already has a primary contact",
+    "uq_lost_enquiries_enquiry_id": "Lost enquiry already exists for this enquiry",
+    "uq_contacts_company_primary": "Company already has a primary contact",
 }
 
 
@@ -142,12 +143,12 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(RequestValidationError)
-    async def _validation_handler(
-        _: Request, exc: RequestValidationError
-    ) -> JSONResponse:
+    async def _validation_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
         return JSONResponse(
             status_code=422,
-            content=_payload("validation_error", "Request validation failed", {"errors": exc.errors()}),
+            content=_payload(
+                "validation_error", "Request validation failed", {"errors": exc.errors()}
+            ),
         )
 
     @app.exception_handler(RedisError)
@@ -210,11 +211,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             constraint=constraint_name,
             columns=constraint_columns,
         )
-        template = (
-            _INTEGRITY_CONSTRAINT_MESSAGES.get(constraint_name)
-            if constraint_name
-            else None
-        )
+        template = _INTEGRITY_CONSTRAINT_MESSAGES.get(constraint_name) if constraint_name else None
         if template is not None:
             if "{value}" in template and offending_value is not None:
                 message = template.format(value=offending_value)

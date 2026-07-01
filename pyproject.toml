@@ -70,8 +70,9 @@ unfixable = ["B", "F401"]
 # aliases (Annotated[Type, Depends(...)]) at request time, so the
 # imports they reference must be available at runtime — not
 # TYPE_CHECKING-only.
-"app/api/v1/**" = ["TC001", "TC003"]
+"app/api/v1/**" = ["TC001", "TC002", "TC003"]
 "app/schemas/**" = ["TC003"]
+"app/models/**" = ["TC003"]
 
 [tool.ruff.format]
 quote-style = "double"

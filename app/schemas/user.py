@@ -1,14 +1,29 @@
-"""User schema (match AuthMeOut, but scoped for admin operations if added)."""
+"""User schemas — admin CRUD shape (public, superadmin-only in the UI).
+
+`app.schemas.auth.UserOut` is the auth-flow shape used by /auth/me and
+/auth/register responses. The two `UserOut`s differ on `id` typing
+(str here, uuid.UUID there) and on whether they expose role info
+(this one does, since it powers admin user-management views).
+"""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import uuid
+from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
-from app.schemas.common import MessageResponse
+from app.schemas.common import MessageResponse, Page
 
-from datetime import datetime
+
+class UserRoleBrief(BaseModel):
+    """Embedded role representation in UserOut."""
+
+    role_id: uuid.UUID
+    role_name: str
+    role_code: str
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserIn(BaseModel):
@@ -18,19 +33,45 @@ class UserIn(BaseModel):
 
 
 class UserOut(BaseModel):
-    id: str = Field(..., description="UUID string")
+    id: uuid.UUID
     email: EmailStr
     full_name: str | None = None
     is_active: bool
     is_superuser: bool
     created_at: datetime
 
+    # Role embedding. `roles` lists every grant on the N:M junction;
+    # `role_id` / `role_name` / `role_code` are the "primary" role
+    # (earliest grant). When the user holds zero roles the flat fields
+    # are null and `roles` is empty.
+    roles: list[UserRoleBrief] = Field(default_factory=list)
+    role_id: uuid.UUID | None = None
+    role_name: str | None = None
+    role_code: str | None = None
+
     model_config = ConfigDict(from_attributes=True)
+
+
+class UserCreate(BaseModel):
+    """Admin-style create payload. Distinct from auth.RegisterIn which
+    is self-service and doesn't accept role/is_superuser."""
+
+    email: EmailStr
+    password: str = Field(..., min_length=8, max_length=255)
+    full_name: str | None = Field(None, max_length=255)
+    is_active: bool = True
+    is_superuser: bool = False
+    role_id: uuid.UUID | None = None
+
+
+class UserList(Page[UserOut]):
+    """Alias for OpenAPI clarity."""
 
 
 class UserPatch(BaseModel):
     full_name: str | None = Field(None, max_length=255)
     is_active: bool | None = None
+    is_superuser: bool | None = None
 
 
 class UserUpdate(UserPatch):

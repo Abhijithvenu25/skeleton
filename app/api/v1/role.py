@@ -13,6 +13,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import DbSession
+from app.api.v1._user_response import build_user_out
 from app.schemas.common import Page
 from app.schemas.role import (
     RoleAssignIn,
@@ -47,7 +48,12 @@ async def create_role(
     payload: RoleIn,
     service: RoleServiceDep,
 ) -> RoleOut:
-    role = await service.create(name=payload.name, permissions=payload.permissions)
+    print("permis:",payload.permissions)
+    role = await service.create(
+        name=payload.name,
+        permissions=payload.permissions,
+        description=payload.description,
+    )
     return RoleOut.model_validate(role)
 
 
@@ -100,6 +106,7 @@ async def update_role(
         role_id=role_id,
         name=payload.name,
         permissions=payload.permissions,
+        description=payload.description,
     )
     return RoleOut.model_validate(role)
 
@@ -148,7 +155,7 @@ async def list_users_with_role(
     service: RoleServiceDep,
 ) -> list[UserOut]:
     users = await service.users_with_role(role_id)
-    return [UserOut.model_validate(u) for u in users]
+    return [await build_user_out(service.session, u) for u in users]
 
 
 @router.get(

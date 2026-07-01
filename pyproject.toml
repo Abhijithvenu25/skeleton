@@ -66,6 +66,12 @@ unfixable = ["B", "F401"]
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "N", "B011"]
 "alembic/**" = ["E", "F", "I"]
+# FastAPI evaluates path-param types (e.g. uuid.UUID) and dependency
+# aliases (Annotated[Type, Depends(...)]) at request time, so the
+# imports they reference must be available at runtime — not
+# TYPE_CHECKING-only.
+"app/api/v1/**" = ["TC001", "TC003"]
+"app/schemas/**" = ["TC003"]
 
 [tool.ruff.format]
 quote-style = "double"

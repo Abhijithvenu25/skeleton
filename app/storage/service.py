@@ -3,6 +3,9 @@
 Public surface:
 - `generate_key(category, filename)` — pure, raises `BadRequestError` for bad input.
 - `StorageService.upload_file(key, body, content_type)` — returns the public URL.
+- `StorageService.upload_uploadfile(file, category)` — streams a FastAPI
+  `UploadFile` to S3 with the same size-cap + extension-validation as the
+  legacy `POST /uploads` flow.
 - `StorageService.delete_file(key)` — best-effort delete; `NotFoundError` if absent.
 
 The key shape is `{category}/{YYYY}/{MM}/{uuid8}_{safe_stem}.{ext}` so a future
@@ -15,16 +18,30 @@ from __future__ import annotations
 import re
 import unicodedata
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import PurePosixPath
 from typing import Final
 
 from botocore.exceptions import ClientError, EndpointConnectionError
+from fastapi import UploadFile
 
 from app.core.config import settings
 from app.core.exceptions import BadRequestError, NotFoundError, S3UnavailableError
 from app.core.logging import get_logger
 from app.storage.s3 import get_s3_session, is_healthy
+
+
+@dataclass(frozen=True)
+class StoredObject:
+    """Result of an upload — what callers need to persist for later deletion
+    or display (`key` is enough to delete; `url` is what the client shows).
+    """
+
+    url: str
+    key: str
+    size: int
+    content_type: str
 
 logger = get_logger(__name__)
 
@@ -180,6 +197,78 @@ class StorageService:
         if settings.s3_public_base_url:
             return public_url(key)
         return await presigned_get_url(key)
+
+    async def upload_uploadfile(
+        self,
+        *,
+        file: UploadFile,
+        category: str,
+    ) -> StoredObject:
+        """Stream an `UploadFile` to S3 with full input + size validation.
+
+        Same contract as the legacy `POST /uploads` endpoint:
+        - filename + content_type required (`BadRequestError`)
+        - category must be in `ALLOWED_CATEGORIES`
+        - extension checked against `CATEGORY_EXT_ALLOW` / `DENY_EXT`
+        - hard size cap = `settings.s3_max_upload_bytes`
+        - empty bodies rejected
+
+        Returns a `StoredObject` so callers can persist `key` (for future
+        deletes) and `url` (for client display) together.
+        """
+        if not file.filename:
+            raise BadRequestError("filename_required")
+        if not file.content_type:
+            raise BadRequestError("content_type_required")
+        if category not in ALLOWED_CATEGORIES:
+            raise BadRequestError(
+                "invalid_category",
+                details={"category": category, "allowed": sorted(ALLOWED_CATEGORIES)},
+            )
+
+        # Build the safe key BEFORE streaming — a hostile filename with
+        # `evil.exe` shouldn't get a single byte onto the wire to S3.
+        key = generate_key(category, file.filename)
+
+        # 1 MiB streamed chunks; bail as soon as the cap is exceeded so a
+        # 1 GB upload doesn't OOM us.
+        max_bytes = settings.s3_max_upload_bytes
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            chunk = await file.read(1024 * 1024)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > max_bytes:
+                raise BadRequestError(
+                    "file_too_large",
+                    details={"max_bytes": max_bytes},
+                )
+            chunks.append(chunk)
+        if total == 0:
+            raise BadRequestError("empty_file")
+
+        body = b"".join(chunks)
+        url = await self.upload_file(
+            key=key,
+            body=body,
+            content_type=file.content_type,
+        )
+
+        logger.info(
+            "upload_completed",
+            key=key,
+            category=category,
+            size=total,
+            content_type=file.content_type,
+        )
+        return StoredObject(
+            url=url,
+            key=key,
+            size=total,
+            content_type=file.content_type,
+        )
 
     async def delete_file(self, key: str) -> None:
         sess = get_s3_session()

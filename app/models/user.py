@@ -24,7 +24,10 @@ class User(Base, UUIDPKMixin, TimestampMixin):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
-    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    user_image: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
     is_superuser: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
@@ -53,11 +56,13 @@ class User(Base, UUIDPKMixin, TimestampMixin):
         """Fetch a user by primary key."""
         from sqlalchemy import select
 
-        return await session.scalar(select(cls).where(cls.id == user_id))
+        result = await session.scalar(select(cls).where(cls.id == user_id))
+        return result
 
     @classmethod
     async def get_by_email(cls, session: AsyncSession, email: str) -> User | None:
         """Fetch a user by email (case-insensitive)."""
         from sqlalchemy import select
 
-        return await session.scalar(select(cls).where(cls.email == email.lower()))
+        result = await session.scalar(select(cls).where(cls.email == email.lower()))
+        return result

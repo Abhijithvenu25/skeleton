@@ -73,7 +73,7 @@ async def list_roles(
     service: RoleServiceDep,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    search: str | None = Query(None, min_length=1, max_length=64),
+    search: str | None = Query(None, max_length=64),
 ) -> ApiResponse[RoleOut]:
     skip = (page - 1) * size
     items, total = await service.paginate(skip=skip, limit=size, search=search)

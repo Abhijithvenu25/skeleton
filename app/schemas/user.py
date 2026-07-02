@@ -36,6 +36,7 @@ class UserOut(BaseModel):
     id: uuid.UUID
     email: EmailStr
     full_name: str | None = None
+    user_image: str | None = None
     is_active: bool
     is_superuser: bool
     created_at: datetime
@@ -55,9 +56,13 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=255)
     full_name: str | None = Field(None, max_length=255)
+    user_image: str | None = Field(None, max_length=2048)
     is_active: bool = True
     is_superuser: bool = False
-    role_id: uuid.UUID | None = None
+    # `role_ids` (plural) lets an admin grant multiple roles at create
+    # time. Empty list / null means no grants. The service rejects
+    # duplicate ids with 400; non-existent ids return 404.
+    role_ids: list[uuid.UUID] = Field(default_factory=list, max_length=64)
 
 
 class UserList(Page[UserOut]):
@@ -66,6 +71,7 @@ class UserList(Page[UserOut]):
 
 class UserPatch(BaseModel):
     full_name: str | None = Field(None, max_length=255)
+    user_image: str | None = Field(None, max_length=2048)
     is_active: bool | None = None
     is_superuser: bool | None = None
 

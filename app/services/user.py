@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from app.core.exceptions import ConflictError, NotFoundError
+from app.core.exceptions import BadRequestError, ConflictError, NotFoundError
 from app.core.security import hash_password
 from app.models.role import Role
 from app.models.user import User
@@ -22,6 +22,7 @@ from sqlalchemy.exc import IntegrityError
 
 if TYPE_CHECKING:
     import uuid
+    from collections.abc import Sequence
 
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -41,6 +42,41 @@ class UserService:
         if user is None:
             raise NotFoundError(f"User {user_id} not found")
         return user
+
+    @staticmethod
+    def _dedupe_role_ids(role_ids: Sequence[uuid.UUID]) -> list[uuid.UUID]:
+        """Detect duplicate role_ids and raise BadRequestError if found.
+
+        Helper exposed for callers that want explicit duplicate
+        detection (currently only `create`). Keeping it static so the
+        rule is independently testable. Returns the input as a list
+        when clean.
+        """
+        seen: set[uuid.UUID] = set()
+        dups: list[uuid.UUID] = []
+        for rid in role_ids:
+            if rid in seen and rid not in dups:
+                dups.append(rid)
+            seen.add(rid)
+        if dups:
+            raise BadRequestError(f"Duplicate role_ids in request: {[str(r) for r in dups]}")
+        return list(role_ids)
+
+    async def _validate_role_ids_exist(self, role_ids: Sequence[uuid.UUID]) -> list[uuid.UUID]:
+        """Bulk-fetch the Role rows for `role_ids` and return the IDs that
+        were found, or raise NotFoundError on the first missing ID.
+
+        A single SELECT keeps this O(1) round-trips regardless of how
+        many grants the admin is making in one call.
+        """
+        if not role_ids:
+            return []
+        stmt = select(Role.id).where(Role.id.in_(role_ids))
+        found = set(await self.session.scalars(stmt))
+        missing = [r for r in role_ids if r not in found]
+        if missing:
+            raise NotFoundError(f"Roles not found: {[str(r) for r in missing]}")
+        return list(role_ids)
 
     # ---- CRUD ---------------------------------------------------------------
 
@@ -74,18 +110,24 @@ class UserService:
         email: str,
         password: str,
         full_name: str | None,
+        user_image: str | None,
         is_active: bool,
         is_superuser: bool,
-        role_id: uuid.UUID | None,
+        role_ids: Sequence[uuid.UUID],
     ) -> User:
         normalized = email.lower()
         if await User.get_by_email(self.session, normalized) is not None:
             raise ConflictError("Email already registered")
 
+        # Reject duplicates explicitly so the client gets a clear 400
+        # rather than the natural IntegrityError -> 409 path.
+        role_ids = self._dedupe_role_ids(role_ids)
+
         user = User(
             email=normalized,
             hashed_password=hash_password(password),
             full_name=full_name,
+            user_image=user_image,
             is_active=is_active,
             is_superuser=is_superuser,
         )
@@ -99,32 +141,37 @@ class UserService:
             await self.session.rollback()
             raise ConflictError("Email already registered") from exc
 
-        # Optional initial role assignment. Validate the role exists so
-        # the caller gets a clean 404 rather than a generic 500.
-        if role_id is not None:
-            role = await Role.get_by_id(self.session, role_id)
-            if role is None:
+        # Validate all role_ids exist before inserting any grants. This
+        # rolls back the user insert if any role is missing — a partial
+        # insert state with no FK target is harder to reason about.
+        if role_ids:
+            try:
+                role_ids = await self._validate_role_ids_exist(role_ids)
+            except NotFoundError:
                 await self.session.rollback()
-                raise NotFoundError(f"Role {role_id} not found")
-            self.session.add(
+                raise
+
+            now = self._now()
+            self.session.add_all(
                 UserRole(
                     user_id=user.id,
-                    role_id=role_id,
-                    granted_at=self._now(),
+                    role_id=rid,
+                    granted_at=now,
                     granted_by_id=None,
                 )
+                for rid in role_ids
             )
             try:
                 await self.session.commit()
             except IntegrityError as exc:
                 await self.session.rollback()
-                raise ConflictError(f"User already has role {role_id}") from exc
+                raise ConflictError(f"User already has role(s): {role_ids}") from exc
         else:
             await self.session.commit()
 
         await self.session.refresh(user)
         # Re-prime the selectin-loaded `roles` relationship so the response
-        # reflects the just-inserted grant without a second round-trip.
+        # reflects the just-inserted grants without a second round-trip.
         await self.session.refresh(user, attribute_names=["roles"])
         return user
 
@@ -133,12 +180,15 @@ class UserService:
         user_id: uuid.UUID,
         *,
         full_name: str | None = None,
+        user_image: str | None = None,
         is_active: bool | None = None,
         is_superuser: bool | None = None,
     ) -> User:
         user = await self._get_or_404(user_id)
         if full_name is not None:
             user.full_name = full_name
+        if user_image is not None:
+            user.user_image = user_image
         if is_active is not None:
             user.is_active = is_active
         if is_superuser is not None:

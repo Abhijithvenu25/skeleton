@@ -38,7 +38,7 @@ UserServiceDep = Annotated[UserService, Depends(_get_user_service)]
     "",
     response_model=ApiResponse[UserOut],
     status_code=status.HTTP_201_CREATED,
-    summary="Admin-style create a user (optionally with an initial role)",
+    summary="Admin-style create a user (optionally with multiple roles and an S3 user_image URL)",
 )
 async def create_user(
     payload: UserCreate,
@@ -48,9 +48,10 @@ async def create_user(
         email=payload.email,
         password=payload.password,
         full_name=payload.full_name,
+        user_image=payload.user_image,
         is_active=payload.is_active,
         is_superuser=payload.is_superuser,
-        role_id=payload.role_id,
+        role_ids=payload.role_ids,
     )
     return created_single(
         build_user_out(user),
@@ -67,7 +68,7 @@ async def list_users(
     service: UserServiceDep,
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
-    search: str | None = Query(None, min_length=1, max_length=64),
+    search: str | None = Query(None, max_length=64),
 ) -> ApiResponse[UserOut]:
     skip = (page - 1) * size
     items, total = await service.list(skip=skip, limit=size, search=search)
@@ -99,7 +100,7 @@ async def get_user(
 @router.patch(
     "/{user_id}",
     response_model=ApiResponse[UserOut],
-    summary="Patch full_name / is_active / is_superuser (role changes use /roles/{id}/users)",
+    summary="Patch full_name / user_image / is_active / is_superuser (role changes use /roles/{id}/users)",
 )
 async def update_user(
     user_id: uuid.UUID,
@@ -109,6 +110,7 @@ async def update_user(
     user = await service.update(
         user_id=user_id,
         full_name=payload.full_name,
+        user_image=payload.user_image,
         is_active=payload.is_active,
         is_superuser=payload.is_superuser,
     )

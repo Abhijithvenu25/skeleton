@@ -2,6 +2,9 @@
 
 Superadmin-only concern in the frontend (UI hidden from non-superadmins);
 the API mirrors that trade-off, same as /roles.
+
+All success responses use the common ApiResponse envelope — see
+app/schemas/common.py and app/api/v1/_response.py.
 """
 
 from __future__ import annotations
@@ -12,8 +15,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.deps import DbSession
+from app.api.v1._response import created_single, ok_list, ok_single
 from app.api.v1._user_response import build_user_out
-from app.schemas.user import UserCreate, UserList, UserOut, UserPatch
+from app.schemas.common import ApiResponse
+from app.schemas.user import UserCreate, UserOut, UserPatch
 from app.services.user import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -31,14 +36,14 @@ UserServiceDep = Annotated[UserService, Depends(_get_user_service)]
 
 @router.post(
     "",
-    response_model=UserOut,
+    response_model=ApiResponse[UserOut],
     status_code=status.HTTP_201_CREATED,
     summary="Admin-style create a user (optionally with an initial role)",
 )
 async def create_user(
     payload: UserCreate,
     service: UserServiceDep,
-) -> UserOut:
+) -> ApiResponse[UserOut]:
     user = await service.create(
         email=payload.email,
         password=payload.password,
@@ -47,12 +52,15 @@ async def create_user(
         is_superuser=payload.is_superuser,
         role_id=payload.role_id,
     )
-    return await build_user_out(service.session, user)
+    return created_single(
+        build_user_out(user),
+        "user created successfully.",
+    )
 
 
 @router.get(
     "",
-    response_model=UserList,
+    response_model=ApiResponse[UserOut],
     summary="List users (paginated, optional search by email or full_name)",
 )
 async def list_users(
@@ -60,46 +68,51 @@ async def list_users(
     page: int = Query(1, ge=1),
     size: int = Query(20, ge=1, le=100),
     search: str | None = Query(None, min_length=1, max_length=64),
-) -> UserList:
+) -> ApiResponse[UserOut]:
     skip = (page - 1) * size
     items, total = await service.list(skip=skip, limit=size, search=search)
-    pages = (total + size - 1) // size if total else 1
-    return UserList(
-        items=[await build_user_out(service.session, u) for u in items],
-        total=total,
+    return ok_list(
+        [build_user_out(u) for u in items],
         page=page,
         size=size,
-        pages=pages,
+        total=total,
+        message="users fetched successfully.",
     )
 
 
 @router.get(
     "/{user_id}",
-    response_model=UserOut,
+    response_model=ApiResponse[UserOut],
     summary="Get a user by id",
 )
 async def get_user(
     user_id: uuid.UUID,
     service: UserServiceDep,
-) -> UserOut:
+) -> ApiResponse[UserOut]:
     user = await service.get(user_id)
-    return await build_user_out(service.session, user)
+    return ok_single(
+        build_user_out(user),
+        "user fetched successfully.",
+    )
 
 
 @router.patch(
     "/{user_id}",
-    response_model=UserOut,
+    response_model=ApiResponse[UserOut],
     summary="Patch full_name / is_active / is_superuser (role changes use /roles/{id}/users)",
 )
 async def update_user(
     user_id: uuid.UUID,
     payload: UserPatch,
     service: UserServiceDep,
-) -> UserOut:
+) -> ApiResponse[UserOut]:
     user = await service.update(
         user_id=user_id,
         full_name=payload.full_name,
         is_active=payload.is_active,
         is_superuser=payload.is_superuser,
     )
-    return await build_user_out(service.session, user)
+    return ok_single(
+        build_user_out(user),
+        "user updated successfully.",
+    )

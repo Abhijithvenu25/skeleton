@@ -40,14 +40,10 @@ class UserOut(BaseModel):
     is_superuser: bool
     created_at: datetime
 
-    # Role embedding. `roles` lists every grant on the N:M junction;
-    # `role_id` / `role_name` / `role_code` are the "primary" role
-    # (earliest grant). When the user holds zero roles the flat fields
-    # are null and `roles` is empty.
+    # Role grants from the N:M junction. The frontend reads role_id /
+    # role_name / role_code from each entry — there's no separate
+    # "primary role" field at the top level.
     roles: list[UserRoleBrief] = Field(default_factory=list)
-    role_id: uuid.UUID | None = None
-    role_name: str | None = None
-    role_code: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 

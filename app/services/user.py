@@ -42,31 +42,6 @@ class UserService:
             raise NotFoundError(f"User {user_id} not found")
         return user
 
-    async def _primary_role_pair(self, user_id: uuid.UUID) -> tuple[uuid.UUID, str, str] | None:
-        """Earliest UserRole grant for the user, joined to Role for the
-        name + code.
-
-        "Primary role" = the role the user was granted first, in
-        `granted_at` order. This is the same ordering
-        `RoleService.users_with_role` uses, and matches the historical
-        1:1 cardinality from before the N:M migration.
-
-        Returns (role_id, role_name, role_code) or None if the user
-        holds no roles.
-        """
-        stmt = (
-            select(Role.id, Role.name, Role.role_code)
-            .join(UserRole, UserRole.role_id == Role.id)
-            .where(UserRole.user_id == user_id)
-            .order_by(UserRole.granted_at.asc())
-            .limit(1)
-        )
-        result = await self.session.execute(stmt)
-        row = result.first()
-        if row is None:
-            return None
-        return row[0], row[1], row[2]
-
     # ---- CRUD ---------------------------------------------------------------
 
     async def list(

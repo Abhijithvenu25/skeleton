@@ -125,10 +125,10 @@ def public_url(key: str) -> str:
     Raises `RuntimeError` if no public base is configured — call
     `presigned_get_url(key)` for private buckets in that case.
     """
-    base = settings.s3_public_base_url.rstrip("/")
+    base = settings.s3_public_base_url
     if not base:
         raise RuntimeError("no_public_base_url_configured_call_presigned_get_url")
-    return f"{base}/{key}"
+    return f"{base.rstrip('/')}/{key}"
 
 
 async def presigned_get_url(key: str) -> str:
@@ -144,12 +144,14 @@ async def presigned_get_url(key: str) -> str:
 
 
 def _client_kwargs() -> dict[str, object]:
-    return {
-        "endpoint_url": settings.s3_endpoint_url,
+    kwargs: dict[str, object] = {
         "region_name": settings.s3_region,
         "aws_access_key_id": settings.s3_access_key_id,
         "aws_secret_access_key": settings.s3_secret_access_key,
     }
+    if settings.s3_endpoint_url:
+        kwargs["endpoint_url"] = settings.s3_endpoint_url
+    return kwargs
 
 
 class StorageService:

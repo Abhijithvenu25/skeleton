@@ -34,28 +34,6 @@ services:
       retries: 10
     networks: [appnet]
 
-  minio:
-    # S3-compatible object storage for local dev. The `app` service does NOT
-    # depend_on minio (warn-and-continue on boot) — see app/main.py lifespan.
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-kalisia}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-kalisia123}
-    volumes:
-      - minio_data:/data
-    ports:
-      - "9000:9000"   # S3 API (also what the browser hits via public_base_url)
-      - "9001:9001"   # web console
-    healthcheck:
-      # MinIO serves a tiny liveness JSON on the API port. curl is in the
-      # base minio image.
-      test: ["CMD", "curl", "-fsS", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-    networks: [appnet]
-
   app:
     build:
       context: .
@@ -80,7 +58,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  minio_data:
 
 networks:
   appnet:

@@ -50,20 +50,13 @@ class Settings(BaseSettings):
     # docker-internal hostname that only resolves inside compose networks.
     redis_url: RedisDsn = Field(default="redis://localhost:6379/0")  # type: ignore[assignment]
 
-    # S3-compatible object storage (MinIO locally, S3/R2/Wasabi in prod).
-    # Defaults point at the docker-compose `minio` service so the app works
-    # out of the box after `docker compose up`. Production overrides every
-    # one of these via platform env vars (see the env-file strategy at the
-    # top of this file).
-    s3_endpoint_url: str = "http://minio:9000"
-    s3_region: str = "us-east-1"  # MinIO ignores but boto3 requires one
-    s3_bucket: str = "kalisia-uploads"
-    s3_access_key_id: str = "kalisia"
-    s3_secret_access_key: str = "kalisia123"  # noqa: S105
-    # When set, returned URLs are `${s3_public_base_url}/${key}`.
-    # When empty, the service returns a presigned URL with TTL =
-    # s3_presigned_ttl_seconds (use for private buckets).
-    s3_public_base_url: str = "http://localhost:9000/kalisia-uploads"
+    # S3 Object Storage (AWS S3)
+    s3_endpoint_url: str | None = None
+    s3_region: str
+    s3_bucket: str
+    s3_access_key_id: str
+    s3_secret_access_key: str
+    s3_public_base_url: str | None = None
     s3_presigned_ttl_seconds: int = 3600
 
     # JWT

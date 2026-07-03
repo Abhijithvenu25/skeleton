@@ -44,13 +44,15 @@ def _boto_config() -> BotoConfig:
 
 
 def _client_kwargs() -> dict[str, object]:
-    return {
-        "endpoint_url": settings.s3_endpoint_url,
+    kwargs: dict[str, object] = {
         "region_name": settings.s3_region,
         "aws_access_key_id": settings.s3_access_key_id,
         "aws_secret_access_key": settings.s3_secret_access_key,
         "config": _boto_config(),
     }
+    if settings.s3_endpoint_url:
+        kwargs["endpoint_url"] = settings.s3_endpoint_url
+    return kwargs
 
 
 def is_healthy() -> bool:
@@ -85,17 +87,6 @@ async def ping_s3() -> bool:
                     await s3.create_bucket(Bucket=settings.s3_bucket)
                 else:
                     raise
-
-            if settings.is_local and settings.s3_public_base_url:
-                # Local convenience: make the bucket world-readable so the
-                # returned public URL works in a browser. In non-local envs
-                # we leave the bucket private and rely on presigned URLs.
-                policy = (
-                    '{"Version":"2012-10-17","Statement":[{"Effect":"Allow",'
-                    '"Principal":{"AWS":["*"]},"Action":["s3:GetObject"],'
-                    f'"Resource":["arn:aws:s3:::{settings.s3_bucket}/*"]}}]'
-                )
-                await s3.put_bucket_policy(Bucket=settings.s3_bucket, Policy=policy)
 
         _healthy = True
         logger.info(

@@ -12,13 +12,14 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, Form, File, UploadFile
+from pydantic import EmailStr
 
-from app.api.deps import DbSession
+from app.api.deps import DbSession, StorageServiceDep
 from app.api.v1._response import created_single, ok_list, ok_single
 from app.api.v1._user_response import build_user_out
 from app.schemas.common import ApiResponse
-from app.schemas.user import UserCreate, UserOut, UserPatch
+from app.schemas.user import UserOut
 from app.services.user import UserService
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -38,20 +39,32 @@ UserServiceDep = Annotated[UserService, Depends(_get_user_service)]
     "",
     response_model=ApiResponse[UserOut],
     status_code=status.HTTP_201_CREATED,
-    summary="Admin-style create a user (optionally with multiple roles and an S3 user_image URL)",
+    summary="Admin-style create a user (optionally with multiple roles and an S3 user_image upload)",
 )
 async def create_user(
-    payload: UserCreate,
     service: UserServiceDep,
+    storage_service: StorageServiceDep,
+    email: EmailStr = Form(...),
+    password: str = Form(..., min_length=8, max_length=255),
+    full_name: str | None = Form(None, max_length=255),
+    is_active: bool = Form(True),
+    is_superuser: bool = Form(False),
+    role_ids: list[uuid.UUID] = Form(default_factory=list),
+    user_image: UploadFile | None = File(None),
 ) -> ApiResponse[UserOut]:
+    image_url = None
+    if user_image:
+        stored = await storage_service.upload_uploadfile(file=user_image, category="photos")
+        image_url = stored.url
+
     user = await service.create(
-        email=payload.email,
-        password=payload.password,
-        full_name=payload.full_name,
-        user_image=payload.user_image,
-        is_active=payload.is_active,
-        is_superuser=payload.is_superuser,
-        role_ids=payload.role_ids,
+        email=email,
+        password=password,
+        full_name=full_name,
+        user_image=image_url,
+        is_active=is_active,
+        is_superuser=is_superuser,
+        role_ids=role_ids,
     )
     return created_single(
         build_user_out(user),
@@ -104,15 +117,24 @@ async def get_user(
 )
 async def update_user(
     user_id: uuid.UUID,
-    payload: UserPatch,
     service: UserServiceDep,
+    storage_service: StorageServiceDep,
+    full_name: str | None = Form(None, max_length=255),
+    is_active: bool | None = Form(None),
+    is_superuser: bool | None = Form(None),
+    user_image: UploadFile | None = File(None),
 ) -> ApiResponse[UserOut]:
+    image_url = None
+    if user_image:
+        stored = await storage_service.upload_uploadfile(file=user_image, category="photos")
+        image_url = stored.url
+
     user = await service.update(
         user_id=user_id,
-        full_name=payload.full_name,
-        user_image=payload.user_image,
-        is_active=payload.is_active,
-        is_superuser=payload.is_superuser,
+        full_name=full_name,
+        user_image=image_url,
+        is_active=is_active,
+        is_superuser=is_superuser,
     )
     return ok_single(
         build_user_out(user),

@@ -50,7 +50,7 @@ ALLOWED_CATEGORIES: Final[frozenset[str]] = frozenset({"boq", "drawings", "photo
 # Per-category extension allow-list. `None` means "any extension not in
 # DENY_EXT is allowed" (used for `other`).
 CATEGORY_EXT_ALLOW: Final[dict[str, frozenset[str] | None]] = {
-    "boq": frozenset({"xlsx", "xls", "csv", "ods"}),
+    "boq": frozenset({"xlsx", "xls", "csv", "ods", "pdf", "doc", "docx"}),
     "drawings": frozenset({"dwg", "dxf", "pdf", "png", "jpg", "jpeg"}),
     "photos": frozenset({"jpg", "jpeg", "png", "webp", "heic", "heif"}),
     "pdf": frozenset({"pdf"}),

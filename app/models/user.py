@@ -16,9 +16,9 @@ if TYPE_CHECKING:
     from sqlalchemy import select as _select  # noqa: F401  (typing only)
 
     from app.models.role import Role
-    # from app.models.enquiry import Enquiry
-    # from app.models.site_visit import SiteVisit
-    # from app.models.quotation import Quotation
+    from app.models.enquiry import Enquiry
+    from app.models.site_visit import SiteVisit
+    from app.models.quotation import Quotation
 
 class User(Base, UUIDPKMixin, TimestampMixin):
     __tablename__ = "users"
@@ -49,16 +49,16 @@ class User(Base, UUIDPKMixin, TimestampMixin):
         lazy="selectin",
     )
 
-    # enquiries: Mapped[list["Enquiry"]] = relationship(
-    #     "Enquiry", back_populates="sales_executive", foreign_keys="Enquiry.sales_executive_id"
-    # )
-    # engineered_visits: Mapped[list["SiteVisit"]] = relationship(
-    #     "SiteVisit", back_populates="engineer", foreign_keys="SiteVisit.engineer_id"
-    # )
-    # executive_visits: Mapped[list["SiteVisit"]] = relationship(
-    #     "SiteVisit", back_populates="sales_executive", foreign_keys="SiteVisit.sales_executive_id"
-    # )
-    # quotations: Mapped[list["Quotation"]] = relationship("Quotation", back_populates="executive")
+    enquiries: Mapped[list["Enquiry"]] = relationship(
+        "Enquiry", back_populates="sales_executive", foreign_keys="Enquiry.sales_executive_id"
+    )
+    engineered_visits: Mapped[list["SiteVisit"]] = relationship(
+        "SiteVisit", back_populates="engineer", foreign_keys="SiteVisit.engineer_id"
+    )
+    executive_visits: Mapped[list["SiteVisit"]] = relationship(
+        "SiteVisit", back_populates="sales_executive", foreign_keys="SiteVisit.sales_executive_id"
+    )
+    quotations: Mapped[list["Quotation"]] = relationship("Quotation", back_populates="executive")
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, email={self.email!r})"

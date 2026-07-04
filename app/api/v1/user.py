@@ -47,9 +47,10 @@ async def create_user(
     email: EmailStr = Form(...),
     password: str = Form(..., min_length=8, max_length=255),
     full_name: str | None = Form(None, max_length=255),
+    phone: str | None = Form(None, max_length=50),
     is_active: bool = Form(True),
     is_superuser: bool = Form(False),
-    role_ids: list[uuid.UUID] = Form(default_factory=list),
+    roles: list[uuid.UUID] = Form(default_factory=list),
     user_image: UploadFile | None = File(None),
 ) -> ApiResponse[UserOut]:
     image_url = None
@@ -61,10 +62,11 @@ async def create_user(
         email=email,
         password=password,
         full_name=full_name,
+        phone=phone,
         user_image=image_url,
         is_active=is_active,
         is_superuser=is_superuser,
-        role_ids=role_ids,
+        role_ids=roles,
     )
     return created_single(
         build_user_out(user),
@@ -113,15 +115,17 @@ async def get_user(
 @router.patch(
     "/{user_id}",
     response_model=ApiResponse[UserOut],
-    summary="Patch full_name / user_image / is_active / is_superuser (role changes use /roles/{id}/users)",
+    summary="Patch full_name / user_image / is_active / is_superuser / roles / password",
 )
 async def update_user(
     user_id: uuid.UUID,
     service: UserServiceDep,
     storage_service: StorageServiceDep,
     full_name: str | None = Form(None, max_length=255),
+    password: str | None = Form(None, min_length=8, max_length=255),
     is_active: bool | None = Form(None),
     is_superuser: bool | None = Form(None),
+    roles: list[uuid.UUID] | None = Form(None),
     user_image: UploadFile | None = File(None),
 ) -> ApiResponse[UserOut]:
     image_url = None
@@ -132,9 +136,11 @@ async def update_user(
     user = await service.update(
         user_id=user_id,
         full_name=full_name,
+        password=password,
         user_image=image_url,
         is_active=is_active,
         is_superuser=is_superuser,
+        role_ids=roles,
     )
     return ok_single(
         build_user_out(user),

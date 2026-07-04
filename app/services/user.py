@@ -17,7 +17,7 @@ from app.core.security import hash_password
 from app.models.role import Role
 from app.models.user import User
 from app.models.user_role import UserRole
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, delete
 from sqlalchemy.exc import IntegrityError
 
 if TYPE_CHECKING:
@@ -110,6 +110,7 @@ class UserService:
         email: str,
         password: str,
         full_name: str | None,
+        phone: str | None,
         user_image: str | None,
         is_active: bool,
         is_superuser: bool,
@@ -127,6 +128,7 @@ class UserService:
             email=normalized,
             hashed_password=hash_password(password),
             full_name=full_name,
+            phone=phone,
             user_image=user_image,
             is_active=is_active,
             is_superuser=is_superuser,
@@ -180,19 +182,44 @@ class UserService:
         user_id: uuid.UUID,
         *,
         full_name: str | None = None,
+        password: str | None = None,
         user_image: str | None = None,
         is_active: bool | None = None,
         is_superuser: bool | None = None,
+        role_ids: Sequence[uuid.UUID] | None = None,
     ) -> User:
         user = await self._get_or_404(user_id)
         if full_name is not None:
             user.full_name = full_name
+        if password is not None:
+            user.hashed_password = hash_password(password)
         if user_image is not None:
             user.user_image = user_image
         if is_active is not None:
             user.is_active = is_active
         if is_superuser is not None:
             user.is_superuser = is_superuser
+            
+        if role_ids is not None:
+            role_ids = self._dedupe_role_ids(role_ids)
+            await self._validate_role_ids_exist(role_ids)
+            
+            await self.session.execute(delete(UserRole).where(UserRole.user_id == user.id))
+            
+            if role_ids:
+                now = self._now()
+                self.session.add_all(
+                    UserRole(
+                        user_id=user.id,
+                        role_id=rid,
+                        granted_at=now,
+                        granted_by_id=None,
+                    )
+                    for rid in role_ids
+                )
+
         await self.session.commit()
         await self.session.refresh(user)
+        if role_ids is not None:
+            await self.session.refresh(user, attribute_names=["roles"])
         return user

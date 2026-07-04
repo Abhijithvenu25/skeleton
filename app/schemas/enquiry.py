@@ -70,3 +70,12 @@ class EnquiryDetailOut(BaseModel):
     attachments: AttachmentsOut
 
     model_config = ConfigDict(from_attributes=True)
+
+class LostEnquiryOut(BaseModel):
+    id: uuid.UUID
+    enquiry_number: str
+    company_name: str
+    stage_lost: str | None = None
+    lost_reason: str | None = None
+    date_lost: date | None = None
+    follow_up_date: date | None = None

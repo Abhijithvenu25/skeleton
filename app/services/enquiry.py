@@ -93,6 +93,45 @@ class EnquiryService:
         result = await self.session.scalars(stmt)
         return result.all(), total
 
+    async def list_lost(
+        self,
+        skip: int,
+        limit: int,
+        search: str | None = None,
+        stage_lost: str | None = None,
+        lost_reason: str | None = None,
+    ) -> tuple[Sequence[Enquiry], int]:
+        from sqlalchemy.orm import joinedload
+        from sqlalchemy import func, or_
+
+        stmt = select(Enquiry).where(
+            Enquiry.is_deleted == False,
+            Enquiry.status == EnquiryStatus.lost
+        ).options(
+            joinedload(Enquiry.company)
+        )
+
+        if search:
+            stmt = stmt.where(
+                or_(
+                    Enquiry.enquiry_number.ilike(f"%{search}%"),
+                    Enquiry.company.has(Company.company_name.ilike(f"%{search}%")),
+                )
+            )
+
+        if stage_lost:
+            stmt = stmt.where(Enquiry.stage_lost == stage_lost)
+
+        if lost_reason:
+            stmt = stmt.where(Enquiry.lost_reason == lost_reason)
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = await self.session.scalar(count_stmt) or 0
+
+        stmt = stmt.order_by(Enquiry.date_lost.desc().nulls_last()).offset(skip).limit(limit)
+        result = await self.session.scalars(stmt)
+        return result.all(), total
+
     async def update_enquiry(
         self,
         enquiry_id: uuid.UUID,
@@ -119,6 +158,12 @@ class EnquiryService:
         sales_executive_id: uuid.UUID | None = None,
         project_description: str | None = None,
         remarks: str | None = None,
+        stage_lost: str | None = None,
+        lost_reason: str | None = None,
+        date_lost: date | None = None,
+        follow_up_date: date | None = None,
+        reinstated: bool | None = None,
+        status: EnquiryStatus | None = None,
         boq_files: Sequence[UploadFile] | None = None,
         drawings_files: Sequence[UploadFile] | None = None,
         photos_files: Sequence[UploadFile] | None = None,
@@ -162,8 +207,23 @@ class EnquiryService:
         if source is not None: enquiry.enquiry_source = source
         if priority is not None: enquiry.priority = priority
         if sales_executive_id is not None: enquiry.sales_executive_id = sales_executive_id
-        if project_description is not None: enquiry.description = project_description
-        if remarks is not None: enquiry.remarks = remarks
+        if project_description is not None:
+            enquiry.description = project_description
+        if remarks is not None:
+            enquiry.remarks = remarks
+        
+        if stage_lost is not None:
+            enquiry.stage_lost = stage_lost
+        if lost_reason is not None:
+            enquiry.lost_reason = lost_reason
+        if date_lost is not None:
+            enquiry.date_lost = date_lost
+        if follow_up_date is not None:
+            enquiry.follow_up_date = follow_up_date
+        if reinstated is not None:
+            enquiry.reinstated = reinstated
+        if status is not None:
+            enquiry.status = status
 
         def get_category_for_doctype(doc_type: AttachmentDocumentType) -> str:
             mapping = {
@@ -237,14 +297,20 @@ class EnquiryService:
         expected_start_date: date | None,
         source: EnquirySource | None,
         priority: EnquiryPriority,
-        sales_executive_id: uuid.UUID | None,
-        project_description: str | None,
-        remarks: str | None,
-        boq_files: Sequence[UploadFile],
-        drawings_files: Sequence[UploadFile],
-        photos_files: Sequence[UploadFile],
-        tender_files: Sequence[UploadFile],
-        other_files: Sequence[UploadFile],
+        sales_executive_id: uuid.UUID | None = None,
+        project_description: str | None = None,
+        remarks: str | None = None,
+        stage_lost: str | None = None,
+        lost_reason: str | None = None,
+        date_lost: date | None = None,
+        follow_up_date: date | None = None,
+        reinstated: bool | None = None,
+        status: EnquiryStatus | None = None,
+        boq_files: list[UploadFile] = [],
+        drawings_files: list[UploadFile] = [],
+        photos_files: list[UploadFile] = [],
+        tender_files: list[UploadFile] = [],
+        other_files: list[UploadFile] = [],
     ) -> Enquiry:
         company = Company(
             company_name=company_name,

@@ -12,7 +12,7 @@ from app.models.enums import EnquirySource, EnquiryPriority,EnquiryStatus
 from app.api.v1._response import created_single, ok_single, ok_list
 from app.api.v1._enquiry_response import build_enquiry_detail_out
 from app.schemas.common import ApiResponse
-from app.schemas.enquiry import EnquiryOut, EnquiryDetailOut
+from app.schemas.enquiry import EnquiryOut, EnquiryDetailOut, LostEnquiryOut
 from app.services.enquiry import EnquiryService
 from fastapi import Query
 
@@ -95,6 +95,41 @@ async def create_enquiry(
     )
 
 @router.get(
+    "/lost",
+    response_model=ApiResponse[LostEnquiryOut],
+    status_code=status.HTTP_200_OK,
+)
+async def list_lost_enquiries(
+    service: EnquiryServiceDep,
+    page: int = Query(1, ge=1),
+    size: int = Query(20, ge=1, le=100),
+    search: str | None = Query(None),
+    stage_lost: str | None = Query(None),
+    lost_reason: str | None = Query(None),
+) -> ApiResponse[LostEnquiryOut]:
+    skip = (page - 1) * size
+    items, total = await service.list_lost(
+        skip=skip,
+        limit=size,
+        search=search,
+        stage_lost=stage_lost,
+        lost_reason=lost_reason,
+    )
+    
+    out = []
+    for i in items:
+        out.append(LostEnquiryOut(
+            id=i.id,
+            enquiry_number=i.enquiry_number,
+            company_name=i.company.company_name if i.company else "",
+            stage_lost=i.stage_lost,
+            lost_reason=i.lost_reason,
+            date_lost=i.date_lost,
+            follow_up_date=i.follow_up_date,
+        ))
+    return ok_list(out, page=page, size=size, total=total, message="Lost enquiries fetched successfully.")
+
+@router.get(
     "/{enquiry_id}",
     response_model=ApiResponse[EnquiryDetailOut],
     status_code=status.HTTP_200_OK,
@@ -166,6 +201,12 @@ async def update_enquiry_api(
     sales_executive_id: uuid.UUID | None = Form(None),
     project_description: str | None = Form(None),
     remarks: str | None = Form(None),
+    stage_lost: str | None = Form(None),
+    lost_reason: str | None = Form(None),
+    date_lost: date | None = Form(None),
+    follow_up_date: date | None = Form(None),
+    reinstated: bool | None = Form(None),
+    status_param: EnquiryStatus | None = Form(None, alias="status"),
     boq: list[UploadFile] = File(default=[]),
     drawings: list[UploadFile] = File(default=[]),
     photos: list[UploadFile] = File(default=[]),
@@ -196,6 +237,12 @@ async def update_enquiry_api(
         sales_executive_id=sales_executive_id,
         project_description=project_description,
         remarks=remarks,
+        stage_lost=stage_lost,
+        lost_reason=lost_reason,
+        date_lost=date_lost,
+        follow_up_date=follow_up_date,
+        reinstated=reinstated,
+        status=status_param,
         boq_files=boq,
         drawings_files=drawings,
         photos_files=photos,

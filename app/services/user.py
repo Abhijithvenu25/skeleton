@@ -182,6 +182,7 @@ class UserService:
         user_id: uuid.UUID,
         *,
         email: str | None = None,
+        phone: str | None = None,
         full_name: str | None = None,
         password: str | None = None,
         user_image: str | None = None,
@@ -199,6 +200,8 @@ class UserService:
                 user.email = normalized_email
         if full_name is not None:
             user.full_name = full_name
+        if phone is not None:
+            user.phone = phone
         if password is not None:
             user.hashed_password = hash_password(password)
         if user_image is not None:

@@ -115,13 +115,14 @@ async def get_user(
 @router.patch(
     "/{user_id}",
     response_model=ApiResponse[UserOut],
-    summary="Patch email / full_name / user_image / is_active / is_superuser / roles / password",
+    summary="Patch email / phone / full_name / user_image / is_active / is_superuser / roles / password",
 )
 async def update_user(
     user_id: uuid.UUID,
     service: UserServiceDep,
     storage_service: StorageServiceDep,
     email: EmailStr | None = Form(None),
+    phone: str | None = Form(None, max_length=50),
     full_name: str | None = Form(None, max_length=255),
     password: str | None = Form(None, min_length=8, max_length=255),
     is_active: bool | None = Form(None),
@@ -137,6 +138,7 @@ async def update_user(
     user = await service.update(
         user_id=user_id,
         email=email,
+        phone=phone,
         full_name=full_name,
         password=password,
         user_image=image_url,

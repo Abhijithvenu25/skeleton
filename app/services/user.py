@@ -181,6 +181,7 @@ class UserService:
         self,
         user_id: uuid.UUID,
         *,
+        email: str | None = None,
         full_name: str | None = None,
         password: str | None = None,
         user_image: str | None = None,
@@ -189,6 +190,13 @@ class UserService:
         role_ids: Sequence[uuid.UUID] | None = None,
     ) -> User:
         user = await self._get_or_404(user_id)
+        if email is not None:
+            normalized_email = email.lower()
+            if normalized_email != user.email:
+                existing = await User.get_by_email(self.session, normalized_email)
+                if existing is not None:
+                    raise ConflictError("Email already registered")
+                user.email = normalized_email
         if full_name is not None:
             user.full_name = full_name
         if password is not None:

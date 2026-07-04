@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -18,9 +19,24 @@ class UserOut(BaseModel):
     id: uuid.UUID = Field(..., description="User UUID")
     email: EmailStr
     full_name: str | None = None
+    phone: str | None = None
     is_active: bool
     is_superuser: bool
     created_at: datetime
+    roles: list[str] = Field(default_factory=list)
+
+    @field_validator("roles", mode="before")
+    @classmethod
+    def extract_role_names(cls, v: Any) -> list[str]:
+        if not isinstance(v, list):
+            return []
+        res = []
+        for r in v:
+            if hasattr(r, "name"):
+                res.append(r.name)
+            elif isinstance(r, str):
+                res.append(r)
+        return res
 
     model_config = ConfigDict(from_attributes=True)
 

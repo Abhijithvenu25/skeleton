@@ -36,6 +36,7 @@ class UserOut(BaseModel):
     id: uuid.UUID
     email: EmailStr
     full_name: str | None = None
+    phone: str | None = None
     user_image: str | None = None
     is_active: bool
     is_superuser: bool

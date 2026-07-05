@@ -18,7 +18,7 @@ from app.models.enums import EnquirySource, EnquiryPriority, EnquiryStatus, Atta
 from app.core.exceptions import NotFoundError
 
 if TYPE_CHECKING:
-    from app.services.uploads import StorageService
+    from app.storage.service import StorageService
 
 class EnquiryService:
     def __init__(self, session: AsyncSession, storage: StorageService) -> None:
@@ -300,17 +300,11 @@ class EnquiryService:
         sales_executive_id: uuid.UUID | None = None,
         project_description: str | None = None,
         remarks: str | None = None,
-        stage_lost: str | None = None,
-        lost_reason: str | None = None,
-        date_lost: date | None = None,
-        follow_up_date: date | None = None,
-        reinstated: bool | None = None,
-        status: EnquiryStatus | None = None,
-        boq_files: list[UploadFile] = [],
-        drawings_files: list[UploadFile] = [],
-        photos_files: list[UploadFile] = [],
-        tender_files: list[UploadFile] = [],
-        other_files: list[UploadFile] = [],
+        boq_files: Sequence[UploadFile] | None = None,
+        drawings_files: Sequence[UploadFile] | None = None,
+        photos_files: Sequence[UploadFile] | None = None,
+        tender_files: Sequence[UploadFile] | None = None,
+        other_files: Sequence[UploadFile] | None = None,
     ) -> Enquiry:
         company = Company(
             company_name=company_name,

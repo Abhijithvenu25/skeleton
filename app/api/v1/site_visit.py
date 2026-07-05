@@ -1,14 +1,21 @@
-from fastapi import APIRouter, Form, UploadFile, File, status
+from fastapi import APIRouter, Form, UploadFile, File, status, Depends
 import uuid
 from datetime import datetime
-from app.api.deps import CurrentUser
+from typing import Annotated
+from app.api.deps import CurrentUser, DbSession
+from app.api.v1.uploads import StorageServiceDep
 from app.schemas.common import ApiResponse
 from app.schemas.site_visit import SiteVisitOut, AttachmentFile
-from app.services.site_visit import SiteVisitServiceDep
+from app.services.site_visit import SiteVisitService
 from app.models.enums import SiteVisitStatus
 from app.api.v1._response import created_single
 
 router = APIRouter(prefix="/site-visits", tags=["site_visits"])
+
+def _get_site_visit_service(db: DbSession, storage: StorageServiceDep) -> SiteVisitService:
+    return SiteVisitService(db, storage)
+
+SiteVisitServiceDep = Annotated[SiteVisitService, Depends(_get_site_visit_service)]
 
 def build_site_visit_out(visit) -> SiteVisitOut:
     return SiteVisitOut(

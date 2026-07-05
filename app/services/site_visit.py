@@ -4,14 +4,14 @@ from datetime import datetime
 from fastapi import UploadFile, Depends
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload, joinedload
-from app.db.base import AsyncSession
-from app.api.deps import get_db
+from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.site_visit import SiteVisit
 from app.models.enquiry import Enquiry
 from app.models.attachment import Attachment
 from app.models.enums import SiteVisitStatus, AttachmentDocumentType
-from app.core.errors import NotFoundError
-from app.api.v1.uploads import StorageService
+from app.core.exceptions import NotFoundError
+from app.storage.service import StorageService
 
 class SiteVisitService:
     def __init__(self, session: AsyncSession, storage: StorageService):
@@ -97,11 +97,3 @@ class SiteVisitService:
         await self.session.commit()
         return await self.get(site_visit.id)
 
-def get_site_visit_service(
-    session: AsyncSession = Depends(get_db),
-    storage: StorageService = Depends(),
-) -> SiteVisitService:
-    return SiteVisitService(session, storage)
-
-from typing import Annotated
-SiteVisitServiceDep = Annotated[SiteVisitService, Depends(get_site_visit_service)]

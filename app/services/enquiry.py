@@ -406,5 +406,4 @@ class EnquiryService:
         await upload_group(other_files, AttachmentDocumentType.other)
 
         await self.session.commit()
-        await self.session.refresh(enquiry)
-        return enquiry
+        return await self.get(enquiry.id)

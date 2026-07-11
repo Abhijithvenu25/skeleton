@@ -45,5 +45,7 @@ class AttachmentDocumentType(str, Enum):
     boq = "BOQ"
     drawings = "Drawings"
     photos = "Photos"
+    videos = "Videos"
+    measurement_sheets = "Measurement Sheets"
     tender = "Tender"
     other = "Other File"

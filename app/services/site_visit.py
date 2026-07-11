@@ -132,6 +132,89 @@ class SiteVisitService:
         await self.session.commit()
         return await self.get(site_visit.id)
 
+    async def update_site_visit(
+        self,
+        site_visit_id: uuid.UUID,
+        *,
+        visit_date: datetime | None = None,
+        visit_count: int | None = None,
+        engineer_id: uuid.UUID | None = None,
+        sales_executive_id: uuid.UUID | None = None,
+        client_representative: str | None = None,
+        client_representative_no: str | None = None,
+        status: SiteVisitStatus | None = None,
+        notes: str | None = None,
+        requirements: str | None = None,
+        measurements: str | None = None,
+        existing_conditions: str | None = None,
+        challenges: str | None = None,
+        recommendation: str | None = None,
+        photos: Sequence[UploadFile] = [],
+        videos: Sequence[UploadFile] = [],
+        drawings: Sequence[UploadFile] = [],
+        measurement_sheets: Sequence[UploadFile] = [],
+    ) -> SiteVisit:
+        site_visit = await self.get(site_visit_id)
+
+        if visit_date is not None:
+            site_visit.visit_date = visit_date
+        if visit_count is not None:
+            site_visit.visit_count = visit_count
+        if engineer_id is not None:
+            site_visit.engineer_id = engineer_id
+        if sales_executive_id is not None:
+            site_visit.sales_executive_id = sales_executive_id
+        if client_representative is not None:
+            site_visit.client_representative = client_representative
+        if client_representative_no is not None:
+            site_visit.client_representative_no = client_representative_no
+        if status is not None:
+            site_visit.status = status
+        if notes is not None:
+            site_visit.notes = notes
+        if requirements is not None:
+            site_visit.requirements = requirements
+        if measurements is not None:
+            site_visit.measurements = measurements
+        if existing_conditions is not None:
+            site_visit.existing_conditions = existing_conditions
+        if challenges is not None:
+            site_visit.challenges = challenges
+        if recommendation is not None:
+            site_visit.recommendation = recommendation
+
+        def get_category_for_doctype(doc_type: AttachmentDocumentType) -> str:
+            mapping = {
+                AttachmentDocumentType.photos: "photos",
+                AttachmentDocumentType.videos: "videos",
+                AttachmentDocumentType.drawings: "drawings",
+                AttachmentDocumentType.measurement_sheets: "measurement_sheets",
+                AttachmentDocumentType.other: "other",
+            }
+            return mapping.get(doc_type, "other")
+
+        async def upload_group(files: Sequence[UploadFile], doc_type: AttachmentDocumentType):
+            category = get_category_for_doctype(doc_type)
+            for f in files:
+                if not getattr(f, "filename", None):
+                    continue
+                stored = await self.storage.upload_uploadfile(file=f, category=category)
+                attachment = Attachment(
+                    file=stored.url,
+                    file_type=f.content_type or "application/octet-stream",
+                    document_type=doc_type,
+                    site_visit_id=site_visit.id,
+                )
+                self.session.add(attachment)
+
+        await upload_group(photos, AttachmentDocumentType.photos)
+        await upload_group(videos, AttachmentDocumentType.videos)
+        await upload_group(drawings, AttachmentDocumentType.drawings)
+        await upload_group(measurement_sheets, AttachmentDocumentType.measurement_sheets)
+
+        await self.session.commit()
+        return await self.get(site_visit.id)
+
     async def list(
         self,
         skip: int,

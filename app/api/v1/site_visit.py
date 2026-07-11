@@ -8,7 +8,7 @@ from app.schemas.common import ApiResponse
 from app.schemas.site_visit import SiteVisitOut, SiteVisitAttachmentsOut, AttachmentFile
 from app.services.site_visit import SiteVisitService
 from app.models.enums import SiteVisitStatus
-from app.api.v1._response import created_single, ok_list
+from app.api.v1._response import created_single, ok_list, ok_single
 
 router = APIRouter(prefix="/site-visits", tags=["site_visits"])
 
@@ -142,3 +142,63 @@ async def list_site_visits_api(
 
     out = [build_site_visit_out(i) for i in items]
     return ok_list(out, page=page, size=size, total=total, message="Site visits fetched successfully.")
+
+@router.get(
+    "/{site_visit_id}",
+    response_model=ApiResponse[SiteVisitOut],
+    status_code=status.HTTP_200_OK,
+)
+async def get_site_visit_api(
+    site_visit_id: uuid.UUID,
+    service: SiteVisitServiceDep,
+) -> ApiResponse[SiteVisitOut]:
+    visit = await service.get(site_visit_id)
+    return ok_single(build_site_visit_out(visit), message="Site visit fetched successfully.")
+
+@router.patch(
+    "/{site_visit_id}",
+    response_model=ApiResponse[SiteVisitOut],
+    status_code=status.HTTP_200_OK,
+)
+async def update_site_visit_api(
+    site_visit_id: uuid.UUID,
+    service: SiteVisitServiceDep,
+    visit_date: datetime | None = Form(None),
+    visit_count: int | None = Form(None),
+    engineer_id: uuid.UUID | None = Form(None),
+    sales_executive_id: uuid.UUID | None = Form(None),
+    client_representative: str | None = Form(None),
+    client_representative_no: str | None = Form(None),
+    visit_status: SiteVisitStatus | None = Form(None, alias="status"),
+    notes: str | None = Form(None),
+    requirements: str | None = Form(None),
+    measurements: str | None = Form(None),
+    existing_conditions: str | None = Form(None),
+    challenges: str | None = Form(None),
+    recommendation: str | None = Form(None),
+    photos: list[UploadFile] = File(default=[]),
+    videos: list[UploadFile] = File(default=[]),
+    drawings: list[UploadFile] = File(default=[]),
+    measurement_sheets: list[UploadFile] = File(default=[]),
+) -> ApiResponse[SiteVisitOut]:
+    visit = await service.update_site_visit(
+        site_visit_id=site_visit_id,
+        visit_date=visit_date,
+        visit_count=visit_count,
+        engineer_id=engineer_id,
+        sales_executive_id=sales_executive_id,
+        client_representative=client_representative,
+        client_representative_no=client_representative_no,
+        status=visit_status,
+        notes=notes,
+        requirements=requirements,
+        measurements=measurements,
+        existing_conditions=existing_conditions,
+        challenges=challenges,
+        recommendation=recommendation,
+        photos=photos,
+        videos=videos,
+        drawings=drawings,
+        measurement_sheets=measurement_sheets,
+    )
+    return ok_single(build_site_visit_out(visit), message="Site visit updated successfully.")

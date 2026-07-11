@@ -45,7 +45,7 @@ class StoredObject:
 
 logger = get_logger(__name__)
 
-ALLOWED_CATEGORIES: Final[frozenset[str]] = frozenset({"boq", "drawings", "photos", "pdf", "other"})
+ALLOWED_CATEGORIES: Final[frozenset[str]] = frozenset({"boq", "drawings", "photos", "videos", "measurement_sheets", "pdf", "other"})
 
 # Per-category extension allow-list. `None` means "any extension not in
 # DENY_EXT is allowed" (used for `other`).
@@ -53,6 +53,8 @@ CATEGORY_EXT_ALLOW: Final[dict[str, frozenset[str] | None]] = {
     "boq": frozenset({"xlsx", "xls", "csv", "ods", "pdf", "doc", "docx"}),
     "drawings": frozenset({"dwg", "dxf", "pdf", "png", "jpg", "jpeg"}),
     "photos": frozenset({"jpg", "jpeg", "png", "webp", "heic", "heif"}),
+    "videos": frozenset({"mp4", "mov", "avi", "mkv", "webm"}),
+    "measurement_sheets": frozenset({"xlsx", "xls", "csv", "ods", "pdf"}),
     "pdf": frozenset({"pdf"}),
     "other": None,
 }

@@ -16,7 +16,7 @@ class EnquiryAuditLog(Base, UUIDPKMixin, ImmutableMixin):
 
     enquiry_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("enquiry.id", ondelete="CASCADE"),
+        ForeignKey("enquiries.id", ondelete="CASCADE"),
         nullable=False,
     )
     action: Mapped[EnquiryAuditAction] = mapped_column(

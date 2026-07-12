@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.site_visit import SiteVisit
     from app.models.quotation import Quotation
+    from app.models.audit_log import EnquiryAuditLog
     from app.models.attachment import Attachment
 
 class Enquiry(Base, UUIDPKMixin, TimestampMixin, SoftDeleteMixin):
@@ -43,4 +44,7 @@ class Enquiry(Base, UUIDPKMixin, TimestampMixin, SoftDeleteMixin):
     sales_executive: Mapped["User"] = relationship("User", back_populates="enquiries", foreign_keys="Enquiry.sales_executive_id")
     site_visits: Mapped[list["SiteVisit"]] = relationship("SiteVisit", back_populates="enquiry")
     quotations: Mapped[list["Quotation"]] = relationship("Quotation", back_populates="enquiry")
+    audit_logs: Mapped[list["EnquiryAuditLog"]] = relationship(
+        "EnquiryAuditLog", back_populates="enquiry", cascade="all, delete-orphan", order_by="desc(EnquiryAuditLog.created_at)"
+    )
     attachments: Mapped[list["Attachment"]] = relationship("Attachment", back_populates="enquiry")

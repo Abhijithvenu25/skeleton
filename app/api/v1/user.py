@@ -50,13 +50,20 @@ async def create_user(
     phone: str | None = Form(None, max_length=50),
     is_active: bool = Form(True),
     is_superuser: bool = Form(False),
+    is_signature: bool | None = Form(None),
     roles: list[uuid.UUID] = Form(default_factory=list),
     user_image: UploadFile | None = File(None),
+    signature_file: UploadFile | None = File(None),
 ) -> ApiResponse[UserOut]:
     image_url = None
     if user_image:
         stored = await storage_service.upload_uploadfile(file=user_image, category="photos")
         image_url = stored.url
+
+    signature_url = None
+    if signature_file:
+        stored = await storage_service.upload_uploadfile(file=signature_file, category="photos")
+        signature_url = stored.url
 
     user = await service.create(
         email=email,
@@ -64,6 +71,8 @@ async def create_user(
         full_name=full_name,
         phone=phone,
         user_image=image_url,
+        is_signature=is_signature,
+        signature=signature_url,
         is_active=is_active,
         is_superuser=is_superuser,
         role_ids=roles,
@@ -127,13 +136,20 @@ async def update_user(
     password: str | None = Form(None, min_length=8, max_length=255),
     is_active: bool | None = Form(None),
     is_superuser: bool | None = Form(None),
+    is_signature: bool | None = Form(None),
     roles: list[uuid.UUID] | None = Form(None),
     user_image: UploadFile | None = File(None),
+    signature_file: UploadFile | None = File(None),
 ) -> ApiResponse[UserOut]:
     image_url = None
     if user_image:
         stored = await storage_service.upload_uploadfile(file=user_image, category="photos")
         image_url = stored.url
+
+    signature_url = None
+    if signature_file:
+        stored = await storage_service.upload_uploadfile(file=signature_file, category="photos")
+        signature_url = stored.url
 
     user = await service.update(
         user_id=user_id,
@@ -142,6 +158,8 @@ async def update_user(
         full_name=full_name,
         password=password,
         user_image=image_url,
+        is_signature=is_signature,
+        signature=signature_url,
         is_active=is_active,
         is_superuser=is_superuser,
         role_ids=roles,

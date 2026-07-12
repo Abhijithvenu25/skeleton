@@ -13,6 +13,12 @@ class EnquiryStatus(str, Enum):
     accepted = "accepted"
     lost = "lost"
 
+class EnquiryAuditAction(str, Enum):
+    enquiry_created = "enquiry_created"
+    site_visit_scheduled = "site_visit_scheduled"
+    enquiry_lost = "enquiry_lost"
+    enquiry_reinstated = "enquiry_reinstated"
+
 class EnquiryPriority(str, Enum):
     low = "low"
     medium = "medium"

@@ -38,6 +38,8 @@ class UserOut(BaseModel):
     full_name: str | None = None
     phone: str | None = None
     user_image: str | None = None
+    is_signature: bool | None = None
+    signature: str | None = None
     is_active: bool
     is_superuser: bool
     created_at: datetime
@@ -58,6 +60,8 @@ class UserCreate(BaseModel):
     password: str = Field(..., min_length=8, max_length=255)
     full_name: str | None = Field(None, max_length=255)
     user_image: str | None = Field(None, max_length=2048)
+    is_signature: bool | None = None
+    signature: str | None = Field(None, max_length=2048)
     is_active: bool = True
     is_superuser: bool = False
     # `role_ids` (plural) lets an admin grant multiple roles at create
@@ -73,6 +77,8 @@ class UserList(Page[UserOut]):
 class UserPatch(BaseModel):
     full_name: str | None = Field(None, max_length=255)
     user_image: str | None = Field(None, max_length=2048)
+    is_signature: bool | None = None
+    signature: str | None = Field(None, max_length=2048)
     is_active: bool | None = None
     is_superuser: bool | None = None
 

@@ -139,7 +139,7 @@ async def update_user(
     is_signature: bool | None = Form(None),
     roles: list[uuid.UUID] | None = Form(None),
     user_image: UploadFile | None = File(None),
-    signature_file: UploadFile | None = File(None),
+    signature: UploadFile | None = File(None),
 ) -> ApiResponse[UserOut]:
     image_url = None
     if user_image:
@@ -147,8 +147,8 @@ async def update_user(
         image_url = stored.url
 
     signature_url = None
-    if signature_file:
-        stored = await storage_service.upload_uploadfile(file=signature_file, category="photos")
+    if signature:
+        stored = await storage_service.upload_uploadfile(file=signature, category="photos")
         signature_url = stored.url
 
     user = await service.update(

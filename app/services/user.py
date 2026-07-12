@@ -112,6 +112,8 @@ class UserService:
         full_name: str | None,
         phone: str | None,
         user_image: str | None,
+        is_signature: bool | None = None,
+        signature: str | None = None,
         is_active: bool,
         is_superuser: bool,
         role_ids: Sequence[uuid.UUID],
@@ -130,6 +132,8 @@ class UserService:
             full_name=full_name,
             phone=phone,
             user_image=user_image,
+            is_signature=is_signature,
+            signature=signature,
             is_active=is_active,
             is_superuser=is_superuser,
         )
@@ -186,6 +190,8 @@ class UserService:
         full_name: str | None = None,
         password: str | None = None,
         user_image: str | None = None,
+        is_signature: bool | None = None,
+        signature: str | None = None,
         is_active: bool | None = None,
         is_superuser: bool | None = None,
         role_ids: Sequence[uuid.UUID] | None = None,
@@ -206,6 +212,10 @@ class UserService:
             user.hashed_password = hash_password(password)
         if user_image is not None:
             user.user_image = user_image
+        if is_signature is not None:
+            user.is_signature = is_signature
+        if signature is not None:
+            user.signature = signature
         if is_active is not None:
             user.is_active = is_active
         if is_superuser is not None:

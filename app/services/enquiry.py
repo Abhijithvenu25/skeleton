@@ -14,7 +14,8 @@ from app.models.project import Project
 from app.models.project_type import ProjectType
 from app.models.enquiry import Enquiry
 from app.models.attachment import Attachment
-from app.models.enums import EnquirySource, EnquiryPriority, EnquiryStatus, AttachmentDocumentType
+from app.models.audit_log import EnquiryAuditLog
+from app.models.enums import EnquirySource, EnquiryPriority, EnquiryStatus, AttachmentDocumentType, EnquiryAuditAction
 from app.core.exceptions import NotFoundError
 
 if TYPE_CHECKING:
@@ -43,6 +44,15 @@ class EnquiryService:
         if not enquiry:
             raise NotFoundError("Enquiry not found")
         return enquiry
+
+    async def list_audit_logs(self, enquiry_id: uuid.UUID) -> Sequence[EnquiryAuditLog]:
+        stmt = (
+            select(EnquiryAuditLog)
+            .where(EnquiryAuditLog.enquiry_id == enquiry_id)
+            .order_by(EnquiryAuditLog.action_date.desc())
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
 
     async def list(
         self, 
@@ -171,6 +181,7 @@ class EnquiryService:
         other_files: Sequence[UploadFile] | None = None,
     ) -> Enquiry:
         enquiry = await self.get(enquiry_id)
+        old_status = enquiry.status
         
         # update company
         if enquiry.company:
@@ -224,6 +235,23 @@ class EnquiryService:
             enquiry.reinstated = reinstated
         if status is not None:
             enquiry.status = status
+            if old_status != status:
+                if status == EnquiryStatus.lost:
+                    audit_log = EnquiryAuditLog(
+                        enquiry_id=enquiry.id,
+                        action=EnquiryAuditAction.enquiry_lost,
+                        action_date=datetime.now(tz=UTC),
+                        description="Enquiry marked as lost",
+                    )
+                    self.session.add(audit_log)
+                elif old_status == EnquiryStatus.lost and status != EnquiryStatus.lost:
+                    audit_log = EnquiryAuditLog(
+                        enquiry_id=enquiry.id,
+                        action=EnquiryAuditAction.enquiry_reinstated,
+                        action_date=datetime.now(tz=UTC),
+                        description=f"Enquiry reinstated to {status.value}",
+                    )
+                    self.session.add(audit_log)
 
         def get_category_for_doctype(doc_type: AttachmentDocumentType) -> str:
             mapping = {
@@ -374,6 +402,14 @@ class EnquiryService:
         )
         self.session.add(enquiry)
         await self.session.flush()
+
+        audit_log = EnquiryAuditLog(
+            enquiry_id=enquiry.id,
+            action=EnquiryAuditAction.enquiry_created,
+            action_date=datetime.now(tz=UTC),
+            description=f"Enquiry {enquiry_number} created",
+        )
+        self.session.add(audit_log)
 
         def get_category_for_doctype(doc_type: AttachmentDocumentType) -> str:
             mapping = {

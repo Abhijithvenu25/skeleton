@@ -10,7 +10,8 @@ from app.models.site_visit import SiteVisit
 from app.models.enquiry import Enquiry
 from app.models.company import Company
 from app.models.attachment import Attachment
-from app.models.enums import SiteVisitStatus, AttachmentDocumentType
+from app.models.audit_log import EnquiryAuditLog
+from app.models.enums import SiteVisitStatus, AttachmentDocumentType, EnquiryAuditAction
 from app.core.exceptions import NotFoundError
 from app.storage.service import StorageService
 
@@ -99,6 +100,15 @@ class SiteVisitService:
         
         self.session.add(site_visit)
         await self.session.flush()
+
+        from datetime import UTC
+        audit_log = EnquiryAuditLog(
+            enquiry_id=enquiry_id,
+            action=EnquiryAuditAction.site_visit_scheduled,
+            action_date=datetime.now(tz=UTC),
+            description=f"Site Visit {visit_number} (Visit #{visit_count}) scheduled",
+        )
+        self.session.add(audit_log)
 
         def get_category_for_doctype(doc_type: AttachmentDocumentType) -> str:
             mapping = {

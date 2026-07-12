@@ -34,6 +34,8 @@ def _user_to_dict(user: User, brief_roles: list[UserRoleBrief]) -> dict[str, Any
         "full_name": user.full_name,
         "phone": user.phone,
         "user_image": user.user_image,
+        "is_signature": user.is_signature,
+        "signature": user.signature,
         "is_active": user.is_active,
         "is_superuser": user.is_superuser,
         "created_at": user.created_at,

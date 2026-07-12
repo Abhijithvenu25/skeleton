@@ -13,6 +13,7 @@ from app.api.v1._response import created_single, ok_single, ok_list
 from app.api.v1._enquiry_response import build_enquiry_detail_out
 from app.schemas.common import ApiResponse
 from app.schemas.enquiry import EnquiryOut, EnquiryDetailOut, LostEnquiryOut
+from app.schemas.audit_log import EnquiryAuditLogOut
 from app.services.enquiry import EnquiryService
 from fastapi import Query
 
@@ -250,6 +251,18 @@ async def update_enquiry_api(
         other_files=other_files,
     )
     return ok_single(build_enquiry_detail_out(enquiry), message="Enquiry updated successfully.")
+
+@router.get(
+    "/{enquiry_id}/audit-logs",
+    response_model=ApiResponse[EnquiryAuditLogOut],
+    status_code=status.HTTP_200_OK,
+)
+async def get_enquiry_audit_logs_api(
+    enquiry_id: uuid.UUID,
+    service: EnquiryServiceDep,
+) -> ApiResponse[EnquiryAuditLogOut]:
+    logs = await service.list_audit_logs(enquiry_id)
+    return ok_list(list(logs), message="Audit logs fetched successfully.")
 
 @router.delete(
     "/{enquiry_id}",

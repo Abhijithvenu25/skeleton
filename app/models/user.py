@@ -34,6 +34,8 @@ class User(Base, UUIDPKMixin, TimestampMixin):
     is_superuser: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
+    is_signature: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    signature: Mapped[str | None] = mapped_column(String(2048), nullable=True)
 
     # N:M roles via user_roles junction. selectin loading so .roles is eager
     # when serialising a User, avoiding the N+1 trap when responses include

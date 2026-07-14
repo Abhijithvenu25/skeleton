@@ -18,7 +18,7 @@ def build_enquiry_detail_out(enquiry: Enquiry) -> EnquiryDetailOut:
     other = []
 
     for att in enquiry.attachments:
-        item = AttachmentFile(id=att.id, url=att.file)
+        item = AttachmentFile(id=att.id, url=att.file, file_name=att.file_name)
         if att.document_type == AttachmentDocumentType.boq:
             boq.append(item)
         elif att.document_type == AttachmentDocumentType.drawings:

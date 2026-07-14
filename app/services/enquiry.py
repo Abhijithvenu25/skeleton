@@ -272,6 +272,7 @@ class EnquiryService:
                 stored = await self.storage.upload_uploadfile(file=f, category=category)
                 attachment = Attachment(
                     file=stored.url,
+                    file_name=f.filename,
                     file_type=f.content_type or "application/octet-stream",
                     document_type=doc_type,
                     enquiry_id=enquiry.id,
@@ -429,6 +430,7 @@ class EnquiryService:
                 stored = await self.storage.upload_uploadfile(file=f, category=category)
                 attachment = Attachment(
                     file=stored.url,
+                    file_name=f.filename,
                     file_type=f.content_type or "application/octet-stream",
                     document_type=doc_type,
                     enquiry_id=enquiry.id,

@@ -44,6 +44,7 @@ class DescriptionOut(BaseModel):
 class AttachmentFile(BaseModel):
     id: uuid.UUID
     url: str
+    file_name: str | None = None
 
 class AttachmentsOut(BaseModel):
     boq: list[AttachmentFile] = []

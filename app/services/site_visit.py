@@ -128,6 +128,7 @@ class SiteVisitService:
                 stored = await self.storage.upload_uploadfile(file=f, category=category)
                 attachment = Attachment(
                     file=stored.url,
+                    file_name=f.filename,
                     file_type=f.content_type or "application/octet-stream",
                     document_type=doc_type,
                     site_visit_id=site_visit.id,
@@ -211,6 +212,7 @@ class SiteVisitService:
                 stored = await self.storage.upload_uploadfile(file=f, category=category)
                 attachment = Attachment(
                     file=stored.url,
+                    file_name=f.filename,
                     file_type=f.content_type or "application/octet-stream",
                     document_type=doc_type,
                     site_visit_id=site_visit.id,

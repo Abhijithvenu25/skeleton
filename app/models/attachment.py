@@ -16,6 +16,7 @@ class Attachment(Base, UUIDPKMixin):
     __tablename__ = "attachments"
     
     file: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_name: Mapped[str | None] = mapped_column(String(255))
     file_type: Mapped[str | None] = mapped_column(String(100))
     document_type: Mapped[AttachmentDocumentType | None] = mapped_column(SAEnum(AttachmentDocumentType))
     uploaded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now(), server_default=func.now())

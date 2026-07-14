@@ -25,7 +25,7 @@ def build_site_visit_out(visit) -> SiteVisitOut:
 
     if visit.attachments:
         for a in visit.attachments:
-            file_obj = AttachmentFile(id=a.id, url=a.file)
+            file_obj = AttachmentFile(id=a.id, url=a.file, file_name=a.file_name)
             if a.document_type == "Photos":
                 photos.append(file_obj)
             elif a.document_type == "Videos":

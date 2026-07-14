@@ -174,11 +174,11 @@ class EnquiryService:
         follow_up_date: date | None = None,
         reinstated: bool | None = None,
         status: EnquiryStatus | None = None,
-        boq_files: Sequence[UploadFile] | None = None,
-        drawings_files: Sequence[UploadFile] | None = None,
-        photos_files: Sequence[UploadFile] | None = None,
-        tender_files: Sequence[UploadFile] | None = None,
-        other_files: Sequence[UploadFile] | None = None,
+        boq_files: Sequence[UploadFile | str] | None = None,
+        drawings_files: Sequence[UploadFile | str] | None = None,
+        photos_files: Sequence[UploadFile | str] | None = None,
+        tender_files: Sequence[UploadFile | str] | None = None,
+        other_files: Sequence[UploadFile | str] | None = None,
     ) -> Enquiry:
         enquiry = await self.get(enquiry_id)
         old_status = enquiry.status
@@ -263,9 +263,21 @@ class EnquiryService:
             }
             return mapping.get(doc_type, "other")
 
-        async def upload_group(files: Sequence[UploadFile] | None, doc_type: AttachmentDocumentType):
-            if not files: return
+        async def upload_group(files: Sequence[UploadFile | str] | None, doc_type: AttachmentDocumentType):
+            if files is None: return
             category = get_category_for_doctype(doc_type)
+            
+            retained_urls = {f for f in files if isinstance(f, str)}
+            
+            stmt = select(Attachment).where(
+                Attachment.enquiry_id == enquiry.id,
+                Attachment.document_type == doc_type
+            )
+            existing_atts = (await self.session.scalars(stmt)).all()
+            for att in existing_atts:
+                if att.file not in retained_urls:
+                    self.session.delete(att)
+
             for f in files:
                 if not getattr(f, "filename", None):
                     continue
@@ -329,11 +341,11 @@ class EnquiryService:
         sales_executive_id: uuid.UUID | None = None,
         project_description: str | None = None,
         remarks: str | None = None,
-        boq_files: Sequence[UploadFile] | None = None,
-        drawings_files: Sequence[UploadFile] | None = None,
-        photos_files: Sequence[UploadFile] | None = None,
-        tender_files: Sequence[UploadFile] | None = None,
-        other_files: Sequence[UploadFile] | None = None,
+        boq_files: Sequence[UploadFile | str] | None = None,
+        drawings_files: Sequence[UploadFile | str] | None = None,
+        photos_files: Sequence[UploadFile | str] | None = None,
+        tender_files: Sequence[UploadFile | str] | None = None,
+        other_files: Sequence[UploadFile | str] | None = None,
     ) -> Enquiry:
         company = Company(
             company_name=company_name,
@@ -422,10 +434,10 @@ class EnquiryService:
             }
             return mapping.get(doc_type, "other")
 
-        async def upload_group(files: Sequence[UploadFile], doc_type: AttachmentDocumentType):
+        async def upload_group(files: Sequence[UploadFile | str], doc_type: AttachmentDocumentType):
             category = get_category_for_doctype(doc_type)
             for f in files:
-                if not f.filename:
+                if not getattr(f, "filename", None):
                     continue
                 stored = await self.storage.upload_uploadfile(file=f, category=category)
                 attachment = Attachment(

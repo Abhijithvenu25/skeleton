@@ -82,10 +82,10 @@ async def create_site_visit_api(
     existing_conditions: str | None = Form(None),
     challenges: str | None = Form(None),
     recommendation: str | None = Form(None),
-    photos: list[UploadFile] = File(default=[]),
-    videos: list[UploadFile] = File(default=[]),
-    drawings: list[UploadFile] = File(default=[]),
-    measurement_sheets: list[UploadFile] = File(default=[]),
+    photos: list[UploadFile | str] = File(default=[]),
+    videos: list[UploadFile | str] = File(default=[]),
+    drawings: list[UploadFile | str] = File(default=[]),
+    measurement_sheets: list[UploadFile | str] = File(default=[]),
 ) -> ApiResponse[SiteVisitOut]:
     
     visit = await service.create_site_visit(
@@ -176,10 +176,10 @@ async def update_site_visit_api(
     existing_conditions: str | None = Form(None),
     challenges: str | None = Form(None),
     recommendation: str | None = Form(None),
-    photos: list[UploadFile] = File(default=[]),
-    videos: list[UploadFile] = File(default=[]),
-    drawings: list[UploadFile] = File(default=[]),
-    measurement_sheets: list[UploadFile] = File(default=[]),
+    photos: list[UploadFile | str] | None = File(default=None),
+    videos: list[UploadFile | str] | None = File(default=None),
+    drawings: list[UploadFile | str] | None = File(default=None),
+    measurement_sheets: list[UploadFile | str] | None = File(default=None),
 ) -> ApiResponse[SiteVisitOut]:
     visit = await service.update_site_visit(
         site_visit_id=site_visit_id,

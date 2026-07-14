@@ -55,11 +55,11 @@ async def create_enquiry(
     sales_executive_id: uuid.UUID | None = Form(None),
     project_description: str | None = Form(None),
     remarks: str | None = Form(None),
-    boq: list[UploadFile] = File(default=[]),
-    drawings: list[UploadFile] = File(default=[]),
-    photos: list[UploadFile] = File(default=[]),
-    tender_documents: list[UploadFile] = File(default=[]),
-    other_files: list[UploadFile] = File(default=[]),
+    boq: list[UploadFile | str] = File(default=[]),
+    drawings: list[UploadFile | str] = File(default=[]),
+    photos: list[UploadFile | str] = File(default=[]),
+    tender_documents: list[UploadFile | str] = File(default=[]),
+    other_files: list[UploadFile | str] = File(default=[]),
 ) -> ApiResponse[EnquiryDetailOut]:
     enquiry = await service.create_enquiry(
         company_name=company_name,
@@ -208,11 +208,11 @@ async def update_enquiry_api(
     follow_up_date: date | None = Form(None),
     reinstated: bool | None = Form(None),
     status_param: EnquiryStatus | None = Form(None, alias="status"),
-    boq: list[UploadFile] = File(default=[]),
-    drawings: list[UploadFile] = File(default=[]),
-    photos: list[UploadFile] = File(default=[]),
-    tender_documents: list[UploadFile] = File(default=[]),
-    other_files: list[UploadFile] = File(default=[]),
+    boq: list[UploadFile | str] | None = File(default=None),
+    drawings: list[UploadFile | str] | None = File(default=None),
+    photos: list[UploadFile | str] | None = File(default=None),
+    tender_documents: list[UploadFile | str] | None = File(default=None),
+    other_files: list[UploadFile | str] | None = File(default=None),
 ) -> ApiResponse[EnquiryDetailOut]:
     enquiry = await service.update_enquiry(
         enquiry_id=enquiry_id,

@@ -120,7 +120,7 @@ class SiteVisitService:
             }
             return mapping.get(doc_type, "other")
 
-        async def upload_group(files: Sequence[UploadFile], doc_type: AttachmentDocumentType):
+        async def upload_group(files: Sequence[UploadFile | str], doc_type: AttachmentDocumentType):
             category = get_category_for_doctype(doc_type)
             for f in files:
                 if not getattr(f, "filename", None):
@@ -160,10 +160,10 @@ class SiteVisitService:
         existing_conditions: str | None = None,
         challenges: str | None = None,
         recommendation: str | None = None,
-        photos: Sequence[UploadFile] = [],
-        videos: Sequence[UploadFile] = [],
-        drawings: Sequence[UploadFile] = [],
-        measurement_sheets: Sequence[UploadFile] = [],
+        photos: Sequence[UploadFile | str] = [],
+        videos: Sequence[UploadFile | str] = [],
+        drawings: Sequence[UploadFile | str] = [],
+        measurement_sheets: Sequence[UploadFile | str] = [],
     ) -> SiteVisit:
         site_visit = await self.get(site_visit_id)
 
@@ -204,8 +204,21 @@ class SiteVisitService:
             }
             return mapping.get(doc_type, "other")
 
-        async def upload_group(files: Sequence[UploadFile], doc_type: AttachmentDocumentType):
+        async def upload_group(files: Sequence[UploadFile | str] | None, doc_type: AttachmentDocumentType):
+            if files is None: return
             category = get_category_for_doctype(doc_type)
+            
+            retained_urls = {f for f in files if isinstance(f, str)}
+            
+            stmt = select(Attachment).where(
+                Attachment.site_visit_id == site_visit.id,
+                Attachment.document_type == doc_type
+            )
+            existing_atts = (await self.session.scalars(stmt)).all()
+            for att in existing_atts:
+                if att.file not in retained_urls:
+                    self.session.delete(att)
+
             for f in files:
                 if not getattr(f, "filename", None):
                     continue

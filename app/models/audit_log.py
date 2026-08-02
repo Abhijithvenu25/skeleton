@@ -1,7 +1,7 @@
 from datetime import datetime
 import uuid
 from typing import TYPE_CHECKING
-from sqlalchemy import String, Text, ForeignKey, Enum as SQLAlchemyEnum
+from sqlalchemy import String, Text, ForeignKey, Enum as SQLAlchemyEnum, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 from app.db.base import Base
@@ -23,7 +23,7 @@ class EnquiryAuditLog(Base, UUIDPKMixin, ImmutableMixin):
         SQLAlchemyEnum(EnquiryAuditAction),
         nullable=False,
     )
-    action_date: Mapped[datetime] = mapped_column(nullable=False)
+    action_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     enquiry: Mapped["Enquiry"] = relationship("Enquiry", back_populates="audit_logs")

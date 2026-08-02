@@ -16,6 +16,8 @@ class SiteVisitOut(BaseModel):
     visit_count: int
     enquiry_id: uuid.UUID
     company_id: uuid.UUID
+    enquiry_no: str | None = None
+    company_name: str | None = None
     engineer: str | None = None
     sales_executive: str | None = None
     visit_date: datetime

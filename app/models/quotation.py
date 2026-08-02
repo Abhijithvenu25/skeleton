@@ -18,6 +18,7 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin):
     __tablename__ = "quotations"
 
     quotation_number: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+    subject: Mapped[str | None] = mapped_column(String(255))
     enquiry_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("enquiries.id"), nullable=False)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("company.id"), nullable=False)
     executive_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
@@ -35,6 +36,9 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin):
     vat_rate: Mapped[float | None] = mapped_column(Numeric(5, 2), default=0)
     expected_profit: Mapped[float | None] = mapped_column(Numeric(12, 3), default=0)
     total_estimated_cost: Mapped[float | None] = mapped_column(Numeric(12, 3), default=0)
+    
+    terms_and_conditions: Mapped[str | None] = mapped_column(Text)
+    remarks: Mapped[str | None] = mapped_column(Text)
     
     status: Mapped[QuotationStatus] = mapped_column(SAEnum(QuotationStatus), default=QuotationStatus.draft)
 

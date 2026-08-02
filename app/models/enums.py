@@ -18,6 +18,7 @@ class EnquiryAuditAction(str, Enum):
     site_visit_scheduled = "site_visit_scheduled"
     enquiry_lost = "enquiry_lost"
     enquiry_reinstated = "enquiry_reinstated"
+    quotation_generated = "quotation_generated"
 
 class EnquiryPriority(str, Enum):
     low = "low"

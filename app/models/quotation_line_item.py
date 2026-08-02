@@ -1,6 +1,7 @@
 import uuid
 from typing import TYPE_CHECKING
 from sqlalchemy import String, Numeric, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.models.base import UUIDPKMixin, TimestampMixin
@@ -19,5 +20,6 @@ class QuotationLineItem(Base, UUIDPKMixin, TimestampMixin):
     rate: Mapped[float] = mapped_column(Numeric(12, 3), default=0)
     amount: Mapped[float] = mapped_column(Numeric(12, 3), default=0)
     estimated_cost: Mapped[float | None] = mapped_column(Numeric(12, 3), default=0)
+    profit_estimator: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
 
     quotation: Mapped["Quotation"] = relationship("Quotation", back_populates="line_items")

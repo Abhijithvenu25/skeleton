@@ -13,6 +13,7 @@ from app.models.user import User
 from app.models.user_role import UserRole
 
 from app.models.attachment import Attachment
+from app.models.audit_log import EnquiryAuditLog
 from app.models.client import Client
 from app.models.company import Company
 from app.models.enquiry import Enquiry
@@ -28,6 +29,7 @@ __all__ = [
     "Client",
     "Company",
     "Enquiry",
+    "EnquiryAuditLog",
     "ImmutableMixin",
     "Project",
     "ProjectType",

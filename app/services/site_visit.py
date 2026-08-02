@@ -27,7 +27,9 @@ class SiteVisitService:
             .options(
                 joinedload(SiteVisit.engineer),
                 joinedload(SiteVisit.sales_executive),
-                selectinload(SiteVisit.attachments)
+                joinedload(SiteVisit.enquiry),
+                joinedload(SiteVisit.company),
+                selectinload(SiteVisit.attachments),
             )
         )
         visit = await self.session.scalar(stmt)
@@ -253,7 +255,9 @@ class SiteVisitService:
         stmt = select(SiteVisit).options(
             joinedload(SiteVisit.engineer),
             joinedload(SiteVisit.sales_executive),
-            selectinload(SiteVisit.attachments)
+            joinedload(SiteVisit.enquiry),
+            joinedload(SiteVisit.company),
+            selectinload(SiteVisit.attachments),
         )
 
         if search:

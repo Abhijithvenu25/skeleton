@@ -41,6 +41,8 @@ def build_site_visit_out(visit) -> SiteVisitOut:
         visit_count=visit.visit_count,
         enquiry_id=visit.enquiry_id,
         company_id=visit.company_id,
+        enquiry_no=visit.enquiry.enquiry_number if getattr(visit, "enquiry", None) else None,
+        company_name=visit.company.company_name if getattr(visit, "company", None) else None,
         engineer=visit.engineer.full_name if visit.engineer else None,
         sales_executive=visit.sales_executive.full_name if visit.sales_executive else None,
         visit_date=visit.visit_date,

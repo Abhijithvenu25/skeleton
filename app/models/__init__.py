@@ -20,6 +20,7 @@ from app.models.enquiry import Enquiry
 from app.models.project import Project
 from app.models.project_type import ProjectType
 from app.models.quotation import Quotation
+from app.models.quotation_line_item import QuotationLineItem
 from app.models.site_visit import SiteVisit
 
 __all__ = [
@@ -34,6 +35,7 @@ __all__ = [
     "Project",
     "ProjectType",
     "Quotation",
+    "QuotationLineItem",
     "Role",
     "SiteVisit",
     "SoftDeleteMixin",

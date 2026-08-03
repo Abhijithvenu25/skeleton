@@ -28,7 +28,7 @@ async def create_quotation(
 ) -> ApiResponse[QuotationOut]:
     quotation = await service.create(current_user.id, data)
     return created_single(
-        quotation,
+        QuotationOut.model_validate(quotation),
         message="Quotation created successfully.",
     )
 
@@ -48,7 +48,7 @@ async def update_quotation(
     Update an existing quotation and its line items.
     """
     quotation = await service.update(quotation_id, data)
-    return ok_single(quotation, message="Quotation updated successfully.")
+    return ok_single(QuotationOut.model_validate(quotation), message="Quotation updated successfully.")
 
 @router.get(
     "",
@@ -63,7 +63,8 @@ async def list_quotations(
     size: int = Query(10, ge=1, le=100),
 ) -> ApiResponse[list[QuotationOut]]:
     quotations, total = await service.list_all(page=page, size=size)
-    return ok_list(list(quotations), page=page, size=size, total=total, message="Quotations fetched successfully.")
+    out_list = [QuotationOut.model_validate(q) for q in quotations]
+    return ok_list(out_list, page=page, size=size, total=total, message="Quotations fetched successfully.")
 
 @router.get(
     "/{quotation_id}",
@@ -77,4 +78,4 @@ async def get_quotation(
     current_user: CurrentUser,
 ) -> ApiResponse[QuotationOut]:
     quotation = await service.get(quotation_id)
-    return ok_single(quotation, message="Quotation fetched successfully.")
+    return ok_single(QuotationOut.model_validate(quotation), message="Quotation fetched successfully.")

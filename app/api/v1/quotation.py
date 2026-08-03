@@ -1,7 +1,7 @@
 from __future__ import annotations
 import uuid
 from typing import Annotated
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from app.api.deps import DbSession, CurrentUser
 from app.api.v1._response import created_single, ok_single, ok_list
 from app.schemas.common import ApiResponse
@@ -59,11 +59,11 @@ async def update_quotation(
 async def list_quotations(
     service: QuotationServiceDep,
     current_user: CurrentUser,
-    skip: int = 0,
-    limit: int = 100,
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
 ) -> ApiResponse[list[QuotationOut]]:
-    quotations = await service.list_all(skip=skip, limit=limit)
-    return ok_list(list(quotations), message="Quotations fetched successfully.")
+    quotations, total = await service.list_all(page=page, size=size)
+    return ok_list(list(quotations), page=page, size=size, total=total, message="Quotations fetched successfully.")
 
 @router.get(
     "/{quotation_id}",

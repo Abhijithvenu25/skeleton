@@ -1,7 +1,7 @@
 import uuid
 from typing import Sequence
 from fastapi import HTTPException, status
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.quotation import Quotation
@@ -159,13 +159,16 @@ class QuotationService:
             )
         return quotation
 
-    async def list_all(self, skip: int = 0, limit: int = 100) -> Sequence[Quotation]:
+    async def list_all(self, page: int = 1, size: int = 10) -> tuple[Sequence[Quotation], int]:
+        count_stmt = select(func.count()).select_from(Quotation)
+        total = await self.session.scalar(count_stmt) or 0
+        
         stmt = (
             select(Quotation)
             .options(selectinload(Quotation.line_items))
             .order_by(desc(Quotation.created_at))
-            .offset(skip)
-            .limit(limit)
+            .offset((page - 1) * size)
+            .limit(size)
         )
         result = await self.session.scalars(stmt)
-        return result.all()
+        return result.all(), total

@@ -24,6 +24,7 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin):
     executive_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     version: Mapped[int] = mapped_column(Integer, default=1)
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_draft: Mapped[bool] = mapped_column(Boolean, default=True)
     amount: Mapped[float | None] = mapped_column(Numeric(12, 3))
     currency: Mapped[str] = mapped_column(String(10), default="BHD")
     sent_date: Mapped[date | None] = mapped_column(Date)

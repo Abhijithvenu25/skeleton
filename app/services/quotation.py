@@ -64,6 +64,7 @@ class QuotationService:
             terms_and_conditions=data.terms_and_conditions,
             remarks=data.remarks,
             amount=data.amount,
+            is_draft=data.is_draft,
         )
         self.session.add(quotation)
         

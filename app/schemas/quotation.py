@@ -40,6 +40,7 @@ class QuotationBase(BaseModel):
     terms_and_conditions: str | None = None
     remarks: str | None = None
     amount: float | None = 0
+    is_draft: bool = True
 
 class QuotationCreate(QuotationBase):
     line_items: list[QuotationLineItemCreate] = []
@@ -60,6 +61,7 @@ class QuotationCreate(QuotationBase):
                 "terms_and_conditions": "1. 100% Payment after work completion.",
                 "remarks": "Standard terms apply",
                 "amount": 1470.0,
+                "is_draft": True,
                 "line_items": [
                     {
                         "description": "Carrara Premium Italian Marble",
@@ -94,6 +96,7 @@ class QuotationUpdate(BaseModel):
     terms_and_conditions: str | None = None
     remarks: str | None = None
     amount: float | None = None
+    is_draft: bool | None = None
     status: QuotationStatus | None = None
     line_items: list[QuotationLineItemUpdate] | None = None
 

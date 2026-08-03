@@ -15,6 +15,9 @@ class QuotationLineItemBase(BaseModel):
 class QuotationLineItemCreate(QuotationLineItemBase):
     pass
 
+class QuotationLineItemUpdate(QuotationLineItemBase):
+    id: uuid.UUID | None = None
+
 class QuotationLineItemOut(QuotationLineItemBase):
     id: uuid.UUID
     quotation_id: uuid.UUID
@@ -77,6 +80,22 @@ class QuotationCreate(QuotationBase):
             }
         }
     )
+
+class QuotationUpdate(BaseModel):
+    subject: str | None = None
+    quotation_date: date | None = None
+    valid_until: date | None = None
+    site_visit_id: uuid.UUID | None = None
+    subtotal: float | None = None
+    global_discount: float | None = None
+    vat_rate: float | None = None
+    expected_profit: float | None = None
+    total_estimated_cost: float | None = None
+    terms_and_conditions: str | None = None
+    remarks: str | None = None
+    amount: float | None = None
+    status: QuotationStatus | None = None
+    line_items: list[QuotationLineItemUpdate] | None = None
 
 class QuotationOut(QuotationBase):
     id: uuid.UUID

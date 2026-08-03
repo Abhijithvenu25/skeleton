@@ -8,8 +8,8 @@ from app.models.quotation import Quotation
 from app.models.quotation_line_item import QuotationLineItem
 from app.models.enquiry import Enquiry
 from app.models.audit_log import EnquiryAuditLog
-from app.models.enums import EnquiryAuditAction
-from app.schemas.quotation import QuotationCreate
+from app.models.enums import EnquiryAuditAction, EnquiryStatus
+from app.schemas.quotation import QuotationCreate, QuotationUpdate
 
 class QuotationService:
     def __init__(self, session: AsyncSession):
@@ -41,6 +41,9 @@ class QuotationService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Enquiry not found",
             )
+            
+        # Update Enquiry Status
+        enquiry.status = EnquiryStatus.quotation
             
         quotation_number = await self._generate_quotation_number()
         
@@ -89,3 +92,79 @@ class QuotationService:
         
         stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation.id)
         return await self.session.scalar(stmt)
+
+    async def update(self, quotation_id: uuid.UUID, data: QuotationUpdate) -> Quotation:
+        stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation_id)
+        quotation = await self.session.scalar(stmt)
+        if not quotation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Quotation not found",
+            )
+            
+        update_data = data.model_dump(exclude_unset=True, exclude={"line_items"})
+        for field, value in update_data.items():
+            setattr(quotation, field, value)
+            
+        if data.line_items is not None:
+            existing_items_map = {item.id: item for item in quotation.line_items}
+            incoming_item_ids = {item.id for item in data.line_items if item.id is not None}
+            
+            # Delete items not in incoming payload
+            for item_id, existing_item in existing_items_map.items():
+                if item_id not in incoming_item_ids:
+                    await self.session.delete(existing_item)
+            
+            # Update existing or create new
+            for item in data.line_items:
+                if item.id and item.id in existing_items_map:
+                    # Update
+                    existing_item = existing_items_map[item.id]
+                    existing_item.description = item.description
+                    existing_item.quantity = item.quantity
+                    existing_item.unit = item.unit
+                    existing_item.rate = item.rate
+                    existing_item.amount = item.amount
+                    existing_item.estimated_cost = item.estimated_cost
+                    existing_item.profit_estimator = item.profit_estimator
+                else:
+                    # Create new
+                    new_item = QuotationLineItem(
+                        quotation_id=quotation.id,
+                        description=item.description,
+                        quantity=item.quantity,
+                        unit=item.unit,
+                        rate=item.rate,
+                        amount=item.amount,
+                        estimated_cost=item.estimated_cost,
+                        profit_estimator=item.profit_estimator,
+                    )
+                    self.session.add(new_item)
+                    
+        await self.session.commit()
+        await self.session.refresh(quotation)
+        
+        # Refetch to get fresh line items collection after deletes/inserts
+        stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation.id)
+        return await self.session.scalar(stmt)
+
+    async def get(self, quotation_id: uuid.UUID) -> Quotation:
+        stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation_id)
+        quotation = await self.session.scalar(stmt)
+        if not quotation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Quotation not found",
+            )
+        return quotation
+
+    async def list_all(self, skip: int = 0, limit: int = 100) -> Sequence[Quotation]:
+        stmt = (
+            select(Quotation)
+            .options(selectinload(Quotation.line_items))
+            .order_by(desc(Quotation.created_at))
+            .offset(skip)
+            .limit(limit)
+        )
+        result = await self.session.scalars(stmt)
+        return result.all()

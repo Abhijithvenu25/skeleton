@@ -3,9 +3,9 @@ import uuid
 from typing import Annotated
 from fastapi import APIRouter, Depends, status
 from app.api.deps import DbSession, CurrentUser
-from app.api.v1._response import created_single
+from app.api.v1._response import created_single, ok_single, ok_list
 from app.schemas.common import ApiResponse
-from app.schemas.quotation import QuotationCreate, QuotationOut
+from app.schemas.quotation import QuotationCreate, QuotationOut, QuotationUpdate
 from app.services.quotation import QuotationService
 
 router = APIRouter(prefix="/quotations", tags=["quotations"])
@@ -26,8 +26,55 @@ async def create_quotation(
     service: QuotationServiceDep,
     current_user: CurrentUser,
 ) -> ApiResponse[QuotationOut]:
-    quotation = await service.create(user_id=current_user.id, data=data)
+    quotation = await service.create(current_user.id, data)
     return created_single(
         quotation,
         message="Quotation created successfully.",
     )
+
+@router.patch(
+    "/{quotation_id}",
+    response_model=ApiResponse[QuotationOut],
+    status_code=status.HTTP_200_OK,
+    summary="Update a quotation",
+)
+async def update_quotation(
+    quotation_id: uuid.UUID,
+    data: QuotationUpdate,
+    service: QuotationServiceDep,
+    current_user: CurrentUser,
+) -> ApiResponse[QuotationOut]:
+    """
+    Update an existing quotation and its line items.
+    """
+    quotation = await service.update(quotation_id, data)
+    return ok_single(quotation, message="Quotation updated successfully.")
+
+@router.get(
+    "",
+    response_model=ApiResponse[list[QuotationOut]],
+    status_code=status.HTTP_200_OK,
+    summary="List all quotations",
+)
+async def list_quotations(
+    service: QuotationServiceDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 100,
+) -> ApiResponse[list[QuotationOut]]:
+    quotations = await service.list_all(skip=skip, limit=limit)
+    return ok_list(list(quotations), message="Quotations fetched successfully.")
+
+@router.get(
+    "/{quotation_id}",
+    response_model=ApiResponse[QuotationOut],
+    status_code=status.HTTP_200_OK,
+    summary="Get a quotation by ID",
+)
+async def get_quotation(
+    quotation_id: uuid.UUID,
+    service: QuotationServiceDep,
+    current_user: CurrentUser,
+) -> ApiResponse[QuotationOut]:
+    quotation = await service.get(quotation_id)
+    return ok_single(quotation, message="Quotation fetched successfully.")

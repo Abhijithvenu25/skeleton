@@ -41,6 +41,7 @@ class SiteVisitStatus(str, Enum):
     scheduled = "scheduled"
     completed = "completed"
     cancelled = "cancelled"
+    waiting_client = "waiting_client"
 
 class QuotationStatus(str, Enum):
     draft = "draft"

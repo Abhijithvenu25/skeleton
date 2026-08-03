@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from typing import Sequence
 from fastapi import HTTPException, status
 from sqlalchemy import select, desc, func
@@ -84,6 +85,7 @@ class QuotationService:
         audit_log = EnquiryAuditLog(
             enquiry_id=enquiry.id,
             action=EnquiryAuditAction.quotation_generated,
+            action_date=datetime.now(timezone.utc),
             description=f"Quotation {quotation_number} generated",
         )
         self.session.add(audit_log)

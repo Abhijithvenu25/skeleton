@@ -11,7 +11,7 @@ from app.models.enquiry import Enquiry
 from app.models.company import Company
 from app.models.attachment import Attachment
 from app.models.audit_log import EnquiryAuditLog
-from app.models.enums import SiteVisitStatus, AttachmentDocumentType, EnquiryAuditAction
+from app.models.enums import SiteVisitStatus, AttachmentDocumentType, EnquiryAuditAction, EnquiryStatus
 from app.core.exceptions import NotFoundError
 from app.storage.service import StorageService
 
@@ -64,6 +64,9 @@ class SiteVisitService:
         enquiry = await self.session.scalar(stmt)
         if not enquiry:
             raise NotFoundError("Enquiry not found")
+            
+        # Update Enquiry Status
+        enquiry.status = EnquiryStatus.site_visit
 
         # Get latest visit number
         last_visit = await self.session.scalar(

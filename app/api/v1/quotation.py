@@ -52,7 +52,7 @@ async def update_quotation(
 
 @router.get(
     "",
-    response_model=ApiResponse[list[QuotationOut]],
+    response_model=ApiResponse[QuotationOut],
     status_code=status.HTTP_200_OK,
     summary="List all quotations",
 )
@@ -61,7 +61,7 @@ async def list_quotations(
     current_user: CurrentUser,
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
-) -> ApiResponse[list[QuotationOut]]:
+) -> ApiResponse[QuotationOut]:
     quotations, total = await service.list_all(page=page, size=size)
     out_list = [QuotationOut.model_validate(q) for q in quotations]
     return ok_list(out_list, page=page, size=size, total=total, message="Quotations fetched successfully.")

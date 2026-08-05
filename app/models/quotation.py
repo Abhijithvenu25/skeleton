@@ -1,7 +1,7 @@
 import uuid
 from datetime import date
 from typing import TYPE_CHECKING
-from sqlalchemy import String, Boolean, Date, Numeric, Integer, ForeignKey, Enum as SAEnum, Text
+from sqlalchemy import String, Boolean, Date, Numeric, Integer, ForeignKey, Enum as SAEnum, Text, Table, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.models.base import UUIDPKMixin, TimestampMixin, AuditMixin
@@ -13,6 +13,13 @@ if TYPE_CHECKING:
     from app.models.user import User
     from app.models.site_visit import SiteVisit
     from app.models.quotation_line_item import QuotationLineItem
+
+quotation_signatures = Table(
+    "quotation_signatures",
+    Base.metadata,
+    Column("quotation_id", ForeignKey("quotations.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+)
 
 class Quotation(Base, UUIDPKMixin, TimestampMixin, AuditMixin):
     __tablename__ = "quotations"
@@ -49,6 +56,8 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin, AuditMixin):
     executive: Mapped["User"] = relationship("User", back_populates="quotations", foreign_keys="Quotation.executive_id")
     site_visit: Mapped["SiteVisit | None"] = relationship("SiteVisit")
     line_items: Mapped[list["QuotationLineItem"]] = relationship("QuotationLineItem", back_populates="quotation", cascade="all, delete-orphan")
+    signatures: Mapped[list["User"]] = relationship("User", secondary=quotation_signatures)
+    
     created_by: Mapped["User"] = relationship("User", foreign_keys="Quotation.created_by_id")
     updated_by: Mapped["User | None"] = relationship("User", foreign_keys="Quotation.updated_by_id")
 

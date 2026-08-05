@@ -11,6 +11,7 @@ from app.models.enquiry import Enquiry
 from app.models.company import Company
 from app.models.audit_log import EnquiryAuditLog
 from app.models.enums import EnquiryAuditAction, EnquiryStatus, QuotationStatus
+from app.models.user import User
 from app.schemas.quotation import QuotationCreate, QuotationUpdate
 
 class QuotationService:
@@ -72,6 +73,11 @@ class QuotationService:
         )
         self.session.add(quotation)
         
+        if data.user_signature_ids:
+            stmt = select(User).where(User.id.in_(data.user_signature_ids))
+            signature_users = (await self.session.scalars(stmt)).all()
+            quotation.signatures = list(signature_users)
+        
         for item in data.line_items:
             line_item = QuotationLineItem(
                 quotation=quotation,
@@ -103,6 +109,7 @@ class QuotationService:
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
             selectinload(Quotation.updated_by),
+            selectinload(Quotation.signatures),
         ).where(Quotation.id == quotation.id)
         return await self.session.scalar(stmt)
 
@@ -114,6 +121,7 @@ class QuotationService:
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
             selectinload(Quotation.updated_by),
+            selectinload(Quotation.signatures),
         ).where(Quotation.id == quotation_id)
         quotation = await self.session.scalar(stmt)
         if not quotation:
@@ -122,11 +130,16 @@ class QuotationService:
                 detail="Quotation not found",
             )
             
-        update_data = data.model_dump(exclude_unset=True, exclude={"line_items"})
+        update_data = data.model_dump(exclude_unset=True, exclude={"line_items", "user_signature_ids"})
         for field, value in update_data.items():
             setattr(quotation, field, value)
             
         quotation.updated_by_id = user_id
+        
+        if data.user_signature_ids is not None:
+            stmt = select(User).where(User.id.in_(data.user_signature_ids))
+            signature_users = (await self.session.scalars(stmt)).all()
+            quotation.signatures = list(signature_users)
             
         if data.line_items is not None:
             existing_items_map = {item.id: item for item in quotation.line_items}
@@ -174,6 +187,7 @@ class QuotationService:
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
             selectinload(Quotation.updated_by),
+            selectinload(Quotation.signatures),
         ).where(Quotation.id == quotation.id)
         return await self.session.scalar(stmt)
 
@@ -185,6 +199,7 @@ class QuotationService:
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
             selectinload(Quotation.updated_by),
+            selectinload(Quotation.signatures),
         ).where(Quotation.id == quotation_id)
         quotation = await self.session.scalar(stmt)
         if not quotation:
@@ -192,6 +207,35 @@ class QuotationService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Quotation not found",
             )
+        return quotation
+
+    async def remove_signature(self, quotation_id: uuid.UUID, user_id: uuid.UUID) -> Quotation:
+        stmt = select(Quotation).options(
+            selectinload(Quotation.line_items),
+            selectinload(Quotation.enquiry),
+            selectinload(Quotation.company),
+            selectinload(Quotation.executive),
+            selectinload(Quotation.created_by),
+            selectinload(Quotation.updated_by),
+            selectinload(Quotation.signatures),
+        ).where(Quotation.id == quotation_id)
+        quotation = await self.session.scalar(stmt)
+        if not quotation:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Quotation not found",
+            )
+            
+        user_to_remove = next((u for u in quotation.signatures if u.id == user_id), None)
+        if not user_to_remove:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Signature not found on this quotation",
+            )
+            
+        quotation.signatures.remove(user_to_remove)
+        await self.session.commit()
+        await self.session.refresh(quotation)
         return quotation
 
     async def list_all(
@@ -245,6 +289,7 @@ class QuotationService:
                 selectinload(Quotation.executive),
                 selectinload(Quotation.created_by),
                 selectinload(Quotation.updated_by),
+                selectinload(Quotation.signatures),
             )
             .order_by(desc(Quotation.created_at))
             .offset((page - 1) * size)

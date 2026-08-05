@@ -42,6 +42,7 @@ class QuotationBase(BaseModel):
     amount: float | None = 0
     is_draft: bool = True
     version_no: str | None = None
+    user_signature_ids: list[uuid.UUID] | None = None
 
 class QuotationCreate(QuotationBase):
     line_items: list[QuotationLineItemCreate] = []
@@ -100,8 +101,16 @@ class QuotationUpdate(BaseModel):
     amount: float | None = None
     is_draft: bool | None = None
     version_no: str | None = None
+    user_signature_ids: list[uuid.UUID] | None = None
     status: QuotationStatus | None = None
     line_items: list[QuotationLineItemUpdate] | None = None
+
+class QuotationSignatureOut(BaseModel):
+    id: uuid.UUID
+    full_name: str | None = None
+    signature: str | None = None
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class QuotationOut(QuotationBase):
     id: uuid.UUID
@@ -120,5 +129,6 @@ class QuotationOut(QuotationBase):
     updated_at: datetime
     
     line_items: list[QuotationLineItemOut] = []
+    signatures: list[QuotationSignatureOut] = []
     
     model_config = ConfigDict(from_attributes=True)

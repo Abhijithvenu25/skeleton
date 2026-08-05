@@ -94,3 +94,18 @@ async def get_quotation(
 ) -> ApiResponse[QuotationOut]:
     quotation = await service.get(quotation_id)
     return ok_single(QuotationOut.model_validate(quotation), message="Quotation fetched successfully.")
+
+@router.delete(
+    "/{quotation_id}/signatures/{user_id}",
+    response_model=ApiResponse[QuotationOut],
+    status_code=status.HTTP_200_OK,
+    summary="Remove a signature from a quotation",
+)
+async def remove_signature(
+    quotation_id: uuid.UUID,
+    user_id: uuid.UUID,
+    service: QuotationServiceDep,
+    current_user: CurrentUser,
+) -> ApiResponse[QuotationOut]:
+    quotation = await service.remove_signature(quotation_id, user_id)
+    return ok_single(QuotationOut.model_validate(quotation), message="Signature removed successfully.")

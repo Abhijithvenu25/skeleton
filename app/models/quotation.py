@@ -46,7 +46,7 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin, AuditMixin):
 
     enquiry: Mapped["Enquiry"] = relationship("Enquiry", back_populates="quotations")
     company: Mapped["Company"] = relationship("Company", back_populates="quotations")
-    executive: Mapped["User"] = relationship("User", back_populates="quotations")
+    executive: Mapped["User"] = relationship("User", back_populates="quotations", foreign_keys="Quotation.executive_id")
     site_visit: Mapped["SiteVisit | None"] = relationship("SiteVisit")
     line_items: Mapped[list["QuotationLineItem"]] = relationship("QuotationLineItem", back_populates="quotation", cascade="all, delete-orphan")
     created_by: Mapped["User"] = relationship("User", foreign_keys="Quotation.created_by_id")

@@ -2,9 +2,11 @@ from __future__ import annotations
 import uuid
 from typing import Annotated
 from fastapi import APIRouter, Depends, status, Query
+from datetime import date
 from app.api.deps import DbSession, CurrentUser
 from app.api.v1._response import created_single, ok_single, ok_list
 from app.schemas.common import ApiResponse
+from app.models.enums import QuotationStatus
 from app.schemas.quotation import QuotationCreate, QuotationOut, QuotationUpdate
 from app.services.quotation import QuotationService
 
@@ -47,7 +49,7 @@ async def update_quotation(
     """
     Update an existing quotation and its line items.
     """
-    quotation = await service.update(quotation_id, data)
+    quotation = await service.update(quotation_id, data, current_user.id)
     return ok_single(QuotationOut.model_validate(quotation), message="Quotation updated successfully.")
 
 @router.get(
@@ -61,8 +63,21 @@ async def list_quotations(
     current_user: CurrentUser,
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
+    search: str | None = Query(None),
+    status: list[QuotationStatus] | None = Query(None),
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    created_by_id: uuid.UUID | None = Query(None),
 ) -> ApiResponse[QuotationOut]:
-    quotations, total = await service.list_all(page=page, size=size)
+    quotations, total = await service.list_all(
+        page=page, 
+        size=size,
+        search=search,
+        statuses=status,
+        start_date=start_date,
+        end_date=end_date,
+        created_by_id=created_by_id
+    )
     out_list = [QuotationOut.model_validate(q) for q in quotations]
     return ok_list(out_list, page=page, size=size, total=total, message="Quotations fetched successfully.")
 

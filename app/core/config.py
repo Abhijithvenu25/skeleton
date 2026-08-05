@@ -59,6 +59,13 @@ class Settings(BaseSettings):
     s3_public_base_url: str | None = None
     s3_presigned_ttl_seconds: int = 3600
 
+    # SMTP Configuration
+    smtp_host: str = "smtp.gmail.com"
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str | None = None
+
     # JWT
     jwt_secret: str = "change-me"  # noqa: S105
     jwt_algorithm: str = "HS256"

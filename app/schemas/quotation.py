@@ -106,16 +106,16 @@ class QuotationUpdate(BaseModel):
 class QuotationOut(QuotationBase):
     id: uuid.UUID
     quotation_number: str
-    company_id: uuid.UUID
-    executive_id: uuid.UUID | None = None
+    company_name: str | None = None
+    executive_name: str | None = None
     version: int
     is_current: bool
     currency: str
     sent_date: date | None = None
     status: QuotationStatus
     enquiry_no: str | None = None
-    created_by_id: uuid.UUID
-    updated_by_id: uuid.UUID | None = None
+    created_by_name: str | None = None
+    updated_by_name: str | None = None
     created_at: datetime
     updated_at: datetime
     

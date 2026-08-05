@@ -58,7 +58,7 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin, AuditMixin):
 
     @property
     def company_name(self) -> str | None:
-        return self.company.name if self.company else None
+        return self.company.company_name if self.company else None
 
     @property
     def executive_name(self) -> str | None:

@@ -96,11 +96,25 @@ class QuotationService:
         await self.session.commit()
         await self.session.refresh(quotation)
         
-        stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation.id)
+        stmt = select(Quotation).options(
+            selectinload(Quotation.line_items),
+            selectinload(Quotation.enquiry),
+            selectinload(Quotation.company),
+            selectinload(Quotation.executive),
+            selectinload(Quotation.created_by),
+            selectinload(Quotation.updated_by),
+        ).where(Quotation.id == quotation.id)
         return await self.session.scalar(stmt)
 
     async def update(self, quotation_id: uuid.UUID, data: QuotationUpdate, user_id: uuid.UUID) -> Quotation:
-        stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation_id)
+        stmt = select(Quotation).options(
+            selectinload(Quotation.line_items),
+            selectinload(Quotation.enquiry),
+            selectinload(Quotation.company),
+            selectinload(Quotation.executive),
+            selectinload(Quotation.created_by),
+            selectinload(Quotation.updated_by),
+        ).where(Quotation.id == quotation_id)
         quotation = await self.session.scalar(stmt)
         if not quotation:
             raise HTTPException(
@@ -153,11 +167,25 @@ class QuotationService:
         await self.session.refresh(quotation)
         
         # Refetch to get fresh line items collection after deletes/inserts
-        stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation.id)
+        stmt = select(Quotation).options(
+            selectinload(Quotation.line_items),
+            selectinload(Quotation.enquiry),
+            selectinload(Quotation.company),
+            selectinload(Quotation.executive),
+            selectinload(Quotation.created_by),
+            selectinload(Quotation.updated_by),
+        ).where(Quotation.id == quotation.id)
         return await self.session.scalar(stmt)
 
     async def get(self, quotation_id: uuid.UUID) -> Quotation:
-        stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation_id)
+        stmt = select(Quotation).options(
+            selectinload(Quotation.line_items),
+            selectinload(Quotation.enquiry),
+            selectinload(Quotation.company),
+            selectinload(Quotation.executive),
+            selectinload(Quotation.created_by),
+            selectinload(Quotation.updated_by),
+        ).where(Quotation.id == quotation_id)
         quotation = await self.session.scalar(stmt)
         if not quotation:
             raise HTTPException(
@@ -213,6 +241,10 @@ class QuotationService:
             .options(
                 selectinload(Quotation.line_items),
                 selectinload(Quotation.enquiry),
+                selectinload(Quotation.company),
+                selectinload(Quotation.executive),
+                selectinload(Quotation.created_by),
+                selectinload(Quotation.updated_by),
             )
             .order_by(desc(Quotation.created_at))
             .offset((page - 1) * size)

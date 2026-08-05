@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.v1 import auth, health, role, uploads, user, enquiry, project_type, site_visit, company, quotation
+from app.api.v1 import auth, health, role, uploads, user, enquiry, project_type, site_visit, company, quotation, notification
 
 api_router = APIRouter()
 api_router.include_router(health.router)
@@ -17,3 +17,4 @@ api_router.include_router(project_type.router)
 api_router.include_router(site_visit.router)
 api_router.include_router(company.router)
 api_router.include_router(quotation.router)
+api_router.include_router(notification.router)

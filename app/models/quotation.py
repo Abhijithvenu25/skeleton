@@ -55,3 +55,19 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin, AuditMixin):
     @property
     def enquiry_no(self) -> str | None:
         return self.enquiry.enquiry_number if self.enquiry else None
+
+    @property
+    def company_name(self) -> str | None:
+        return self.company.name if self.company else None
+
+    @property
+    def executive_name(self) -> str | None:
+        return self.executive.full_name if self.executive else None
+
+    @property
+    def created_by_name(self) -> str | None:
+        return self.created_by.full_name if self.created_by else None
+
+    @property
+    def updated_by_name(self) -> str | None:
+        return self.updated_by.full_name if self.updated_by else None

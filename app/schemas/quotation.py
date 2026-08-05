@@ -63,6 +63,7 @@ class QuotationCreate(QuotationBase):
                 "remarks": "Standard terms apply",
                 "amount": 1470.0,
                 "is_draft": True,
+                "version_no": "Rev-1",
                 "line_items": [
                     {
                         "description": "Carrara Premium Italian Marble",
@@ -98,6 +99,7 @@ class QuotationUpdate(BaseModel):
     remarks: str | None = None
     amount: float | None = None
     is_draft: bool | None = None
+    version_no: str | None = None
     status: QuotationStatus | None = None
     line_items: list[QuotationLineItemUpdate] | None = None
 

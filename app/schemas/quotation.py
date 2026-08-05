@@ -41,6 +41,7 @@ class QuotationBase(BaseModel):
     remarks: str | None = None
     amount: float | None = 0
     is_draft: bool = True
+    version_no: str | None = None
 
 class QuotationCreate(QuotationBase):
     line_items: list[QuotationLineItemCreate] = []
@@ -110,6 +111,9 @@ class QuotationOut(QuotationBase):
     currency: str
     sent_date: date | None = None
     status: QuotationStatus
+    enquiry_no: str | None = None
+    created_by_id: uuid.UUID
+    updated_by_id: uuid.UUID | None = None
     created_at: datetime
     updated_at: datetime
     

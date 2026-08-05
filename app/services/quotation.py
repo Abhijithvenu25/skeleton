@@ -1,15 +1,16 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 from typing import Sequence
 from fastapi import HTTPException, status
-from sqlalchemy import select, desc, func
+from sqlalchemy import select, desc, func, or_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.quotation import Quotation
 from app.models.quotation_line_item import QuotationLineItem
 from app.models.enquiry import Enquiry
+from app.models.company import Company
 from app.models.audit_log import EnquiryAuditLog
-from app.models.enums import EnquiryAuditAction, EnquiryStatus
+from app.models.enums import EnquiryAuditAction, EnquiryStatus, QuotationStatus
 from app.schemas.quotation import QuotationCreate, QuotationUpdate
 
 class QuotationService:
@@ -66,6 +67,8 @@ class QuotationService:
             remarks=data.remarks,
             amount=data.amount,
             is_draft=data.is_draft,
+            version_no=data.version_no,
+            created_by_id=user_id,
         )
         self.session.add(quotation)
         
@@ -96,7 +99,7 @@ class QuotationService:
         stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation.id)
         return await self.session.scalar(stmt)
 
-    async def update(self, quotation_id: uuid.UUID, data: QuotationUpdate) -> Quotation:
+    async def update(self, quotation_id: uuid.UUID, data: QuotationUpdate, user_id: uuid.UUID) -> Quotation:
         stmt = select(Quotation).options(selectinload(Quotation.line_items)).where(Quotation.id == quotation_id)
         quotation = await self.session.scalar(stmt)
         if not quotation:
@@ -108,6 +111,8 @@ class QuotationService:
         update_data = data.model_dump(exclude_unset=True, exclude={"line_items"})
         for field, value in update_data.items():
             setattr(quotation, field, value)
+            
+        quotation.updated_by_id = user_id
             
         if data.line_items is not None:
             existing_items_map = {item.id: item for item in quotation.line_items}
@@ -161,13 +166,54 @@ class QuotationService:
             )
         return quotation
 
-    async def list_all(self, page: int = 1, size: int = 10) -> tuple[Sequence[Quotation], int]:
-        count_stmt = select(func.count()).select_from(Quotation)
+    async def list_all(
+        self, 
+        page: int = 1, 
+        size: int = 10,
+        search: str | None = None,
+        statuses: list[QuotationStatus] | None = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        created_by_id: uuid.UUID | None = None,
+    ) -> tuple[Sequence[Quotation], int]:
+        stmt = select(Quotation)
+        
+        # Apply filters
+        if search:
+            stmt = stmt.join(Company, Quotation.company_id == Company.id)
+            stmt = stmt.join(Enquiry, Quotation.enquiry_id == Enquiry.id)
+            search_pattern = f"%{search}%"
+            stmt = stmt.where(
+                or_(
+                    Quotation.quotation_number.ilike(search_pattern),
+                    Company.name.ilike(search_pattern),
+                    Enquiry.enquiry_number.ilike(search_pattern)
+                )
+            )
+            
+        if statuses:
+            stmt = stmt.where(Quotation.status.in_(statuses))
+            
+        if start_date:
+            stmt = stmt.where(Quotation.quotation_date >= start_date)
+            
+        if end_date:
+            stmt = stmt.where(Quotation.quotation_date <= end_date)
+            
+        if created_by_id:
+            stmt = stmt.where(Quotation.created_by_id == created_by_id)
+
+        # Count total records matching criteria
+        count_stmt = select(func.count()).select_from(stmt.subquery())
         total = await self.session.scalar(count_stmt) or 0
         
+        # Add eager loads and pagination for data
         stmt = (
-            select(Quotation)
-            .options(selectinload(Quotation.line_items))
+            stmt
+            .options(
+                selectinload(Quotation.line_items),
+                selectinload(Quotation.enquiry),
+            )
             .order_by(desc(Quotation.created_at))
             .offset((page - 1) * size)
             .limit(size)

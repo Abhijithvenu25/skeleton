@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from sqlalchemy import String, Boolean, Date, Numeric, Integer, ForeignKey, Enum as SAEnum, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
-from app.models.base import UUIDPKMixin, TimestampMixin
+from app.models.base import UUIDPKMixin, TimestampMixin, AuditMixin
 from app.models.enums import QuotationStatus
 
 if TYPE_CHECKING:
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from app.models.site_visit import SiteVisit
     from app.models.quotation_line_item import QuotationLineItem
 
-class Quotation(Base, UUIDPKMixin, TimestampMixin):
+class Quotation(Base, UUIDPKMixin, TimestampMixin, AuditMixin):
     __tablename__ = "quotations"
 
     quotation_number: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
@@ -23,6 +23,7 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin):
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("company.id"), nullable=False)
     executive_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     version: Mapped[int] = mapped_column(Integer, default=1)
+    version_no: Mapped[str | None] = mapped_column(String(50))
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
     is_draft: Mapped[bool] = mapped_column(Boolean, default=True)
     amount: Mapped[float | None] = mapped_column(Numeric(12, 3))
@@ -48,3 +49,9 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin):
     executive: Mapped["User"] = relationship("User", back_populates="quotations")
     site_visit: Mapped["SiteVisit | None"] = relationship("SiteVisit")
     line_items: Mapped[list["QuotationLineItem"]] = relationship("QuotationLineItem", back_populates="quotation", cascade="all, delete-orphan")
+    created_by: Mapped["User"] = relationship("User", foreign_keys="Quotation.created_by_id")
+    updated_by: Mapped["User | None"] = relationship("User", foreign_keys="Quotation.updated_by_id")
+
+    @property
+    def enquiry_no(self) -> str | None:
+        return self.enquiry.enquiry_number if self.enquiry else None

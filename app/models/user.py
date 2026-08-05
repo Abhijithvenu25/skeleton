@@ -60,7 +60,9 @@ class User(Base, UUIDPKMixin, TimestampMixin):
     executive_visits: Mapped[list["SiteVisit"]] = relationship(
         "SiteVisit", back_populates="sales_executive", foreign_keys="SiteVisit.sales_executive_id"
     )
-    quotations: Mapped[list["Quotation"]] = relationship("Quotation", back_populates="executive")
+    quotations: Mapped[list["Quotation"]] = relationship(
+        "Quotation", back_populates="executive", foreign_keys="Quotation.executive_id"
+    )
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, email={self.email!r})"

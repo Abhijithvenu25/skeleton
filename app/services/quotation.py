@@ -238,6 +238,24 @@ class QuotationService:
         await self.session.refresh(quotation)
         return quotation
 
+    async def get_revisions(self, quotation_id: uuid.UUID) -> Sequence[Quotation]:
+        quotation = await self.get(quotation_id)
+        
+        stmt = select(Quotation).options(
+            selectinload(Quotation.line_items),
+            selectinload(Quotation.enquiry),
+            selectinload(Quotation.company),
+            selectinload(Quotation.executive),
+            selectinload(Quotation.created_by),
+            selectinload(Quotation.updated_by),
+            selectinload(Quotation.signatures),
+        ).where(
+            Quotation.enquiry_id == quotation.enquiry_id
+        ).order_by(desc(Quotation.created_at))
+        
+        result = await self.session.scalars(stmt)
+        return result.all()
+
     async def list_all(
         self, 
         page: int = 1, 

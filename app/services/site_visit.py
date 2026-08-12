@@ -47,6 +47,7 @@ class SiteVisitService:
         sales_executive_id: uuid.UUID | None = None,
         client_representative: str | None = None,
         client_representative_no: str | None = None,
+        site_address: str | None = None,
         status: SiteVisitStatus = SiteVisitStatus.scheduled,
         notes: str | None = None,
         requirements: str | None = None,
@@ -93,6 +94,7 @@ class SiteVisitService:
             sales_executive_id=sales_executive_id,
             client_representative=client_representative,
             client_representative_no=client_representative_no,
+            site_address=site_address,
             visit_date=visit_date,
             status=status,
             notes=notes,
@@ -158,6 +160,7 @@ class SiteVisitService:
         sales_executive_id: uuid.UUID | None = None,
         client_representative: str | None = None,
         client_representative_no: str | None = None,
+        site_address: str | None = None,
         status: SiteVisitStatus | None = None,
         notes: str | None = None,
         requirements: str | None = None,
@@ -184,6 +187,8 @@ class SiteVisitService:
             site_visit.client_representative = client_representative
         if client_representative_no is not None:
             site_visit.client_representative_no = client_representative_no
+        if site_address is not None:
+            site_visit.site_address = site_address
         if status is not None:
             site_visit.status = status
         if notes is not None:

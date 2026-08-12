@@ -462,3 +462,105 @@ class EnquiryService:
 
         await self.session.commit()
         return await self.get(enquiry.id)
+
+    async def mark_as_lost(
+        self,
+        enquiry_id: uuid.UUID,
+        stage_lost: str,
+        lost_reason: str,
+        date_lost: date | None = None,
+        follow_up_date: date | None = None,
+        remarks: str | None = None,
+    ) -> Enquiry:
+        from app.models.site_visit import SiteVisit
+        from app.models.enums import SiteVisitStatus
+        
+        enquiry = await self.get(enquiry_id)
+        
+        # Update Enquiry fields
+        enquiry.status = EnquiryStatus.lost
+        enquiry.stage_lost = stage_lost
+        enquiry.lost_reason = lost_reason
+        enquiry.date_lost = date_lost or datetime.now(tz=UTC).date()
+        enquiry.follow_up_date = follow_up_date
+        
+        if remarks:
+            if enquiry.remarks:
+                enquiry.remarks += f"\n[Lost Remarks]: {remarks}"
+            else:
+                enquiry.remarks = remarks
+                
+        # Audit log
+        audit_desc = f"Enquiry marked as lost at {stage_lost}: {lost_reason}"
+        if remarks:
+            audit_desc += f". Remarks: {remarks}"
+            
+        audit_log = EnquiryAuditLog(
+            enquiry_id=enquiry.id,
+            action=EnquiryAuditAction.enquiry_lost,
+            action_date=datetime.now(tz=UTC),
+            description=audit_desc,
+        )
+        self.session.add(audit_log)
+        
+        # Cascade to SiteVisits
+        stmt = select(SiteVisit).where(
+            SiteVisit.enquiry_id == enquiry.id,
+            SiteVisit.status.not_in([SiteVisitStatus.completed, SiteVisitStatus.cancelled])
+        )
+        site_visits = await self.session.scalars(stmt)
+        for sv in site_visits:
+            sv.status = SiteVisitStatus.enquiry_lost
+            
+        await self.session.commit()
+        await self.session.refresh(enquiry)
+        return enquiry
+
+    async def reinstate(
+        self,
+        enquiry_id: uuid.UUID,
+        remarks: str | None = None,
+    ) -> Enquiry:
+        from app.models.site_visit import SiteVisit
+        from app.models.enums import SiteVisitStatus
+        
+        enquiry = await self.get(enquiry_id)
+        
+        enquiry.status = EnquiryStatus.enquiry
+        enquiry.reinstated = True
+        enquiry.stage_lost = None
+        enquiry.lost_reason = None
+        enquiry.date_lost = None
+        enquiry.follow_up_date = None
+        
+        if remarks:
+            if enquiry.remarks:
+                enquiry.remarks += f"\n[Reinstated Remarks]: {remarks}"
+            else:
+                enquiry.remarks = remarks
+                
+        # Audit log
+        audit_desc = "Enquiry reinstated"
+        if remarks:
+            audit_desc += f". Remarks: {remarks}"
+            
+        audit_log = EnquiryAuditLog(
+            enquiry_id=enquiry.id,
+            action=EnquiryAuditAction.enquiry_reinstated,
+            action_date=datetime.now(tz=UTC),
+            description=audit_desc,
+        )
+        self.session.add(audit_log)
+        
+        # Cascade to SiteVisits (change enquiry_lost to reopened)
+        stmt = select(SiteVisit).where(
+            SiteVisit.enquiry_id == enquiry.id,
+            SiteVisit.status == SiteVisitStatus.enquiry_lost
+        )
+        site_visits = await self.session.scalars(stmt)
+        for sv in site_visits:
+            sv.status = SiteVisitStatus.reopened
+            
+        await self.session.commit()
+        await self.session.refresh(enquiry)
+        return enquiry

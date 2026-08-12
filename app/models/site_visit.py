@@ -27,6 +27,7 @@ class SiteVisit(Base, UUIDPKMixin, TimestampMixin):
     client_representative: Mapped[str | None] = mapped_column(String(255))
     client_representative_no: Mapped[str | None] = mapped_column(String(50))
     site_address: Mapped[str | None] = mapped_column(Text)
+    map_link: Mapped[str | None] = mapped_column(Text)
     notes: Mapped[str | None] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text)
     measurements: Mapped[str | None] = mapped_column(Text)

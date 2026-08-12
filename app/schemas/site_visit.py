@@ -25,6 +25,7 @@ class SiteVisitOut(BaseModel):
     client_representative: str | None = None
     client_representative_no: str | None = None
     site_address: str | None = None
+    map_link: str | None = None
     notes: str | None = None
     requirements: str | None = None
     measurements: str | None = None

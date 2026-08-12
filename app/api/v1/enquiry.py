@@ -266,7 +266,7 @@ async def get_enquiry_audit_logs_api(
     service: EnquiryServiceDep,
 ) -> ApiResponse[EnquiryAuditLogOut]:
     logs = await service.list_audit_logs(enquiry_id)
-    logs_list = list(logs)
+    logs_list = [EnquiryAuditLogOut.model_validate(log) for log in logs]
     return ok_list(
         logs_list, 
         page=1, 

@@ -48,6 +48,7 @@ class SiteVisitService:
         client_representative: str | None = None,
         client_representative_no: str | None = None,
         site_address: str | None = None,
+        map_link: str | None = None,
         status: SiteVisitStatus = SiteVisitStatus.scheduled,
         notes: str | None = None,
         requirements: str | None = None,
@@ -95,6 +96,7 @@ class SiteVisitService:
             client_representative=client_representative,
             client_representative_no=client_representative_no,
             site_address=site_address,
+            map_link=map_link,
             visit_date=visit_date,
             status=status,
             notes=notes,
@@ -161,6 +163,7 @@ class SiteVisitService:
         client_representative: str | None = None,
         client_representative_no: str | None = None,
         site_address: str | None = None,
+        map_link: str | None = None,
         status: SiteVisitStatus | None = None,
         notes: str | None = None,
         requirements: str | None = None,
@@ -189,6 +192,8 @@ class SiteVisitService:
             site_visit.client_representative_no = client_representative_no
         if site_address is not None:
             site_visit.site_address = site_address
+        if map_link is not None:
+            site_visit.map_link = map_link
         if status is not None:
             site_visit.status = status
         if notes is not None:

@@ -43,6 +43,7 @@ class SiteVisitStatus(str, Enum):
     cancelled = "cancelled"
     waiting_client = "waiting_client"
     enquiry_lost = "enquiry_lost"
+    reopened = "reopened"
 
 class QuotationStatus(str, Enum):
     draft = "draft"

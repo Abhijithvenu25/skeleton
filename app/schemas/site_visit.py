@@ -24,6 +24,7 @@ class SiteVisitOut(BaseModel):
     status: SiteVisitStatus
     client_representative: str | None = None
     client_representative_no: str | None = None
+    site_address: str | None = None
     notes: str | None = None
     requirements: str | None = None
     measurements: str | None = None

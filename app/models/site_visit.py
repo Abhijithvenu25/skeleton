@@ -26,6 +26,7 @@ class SiteVisit(Base, UUIDPKMixin, TimestampMixin):
     status: Mapped[SiteVisitStatus] = mapped_column(SAEnum(SiteVisitStatus), default=SiteVisitStatus.scheduled)
     client_representative: Mapped[str | None] = mapped_column(String(255))
     client_representative_no: Mapped[str | None] = mapped_column(String(50))
+    site_address: Mapped[str | None] = mapped_column(Text)
     notes: Mapped[str | None] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text)
     measurements: Mapped[str | None] = mapped_column(Text)

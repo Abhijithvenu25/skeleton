@@ -81,3 +81,13 @@ class LostEnquiryOut(BaseModel):
     lost_reason: str | None = None
     date_lost: date | None = None
     follow_up_date: date | None = None
+
+class MarkEnquiryLostRequest(BaseModel):
+    stage_lost: str
+    lost_reason: str
+    date_lost: date | None = None
+    follow_up_date: date | None = None
+    remarks: str | None = None
+
+class ReinstateEnquiryRequest(BaseModel):
+    remarks: str | None = None

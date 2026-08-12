@@ -12,7 +12,7 @@ from app.models.enums import EnquirySource, EnquiryPriority,EnquiryStatus
 from app.api.v1._response import created_single, ok_single, ok_list
 from app.api.v1._enquiry_response import build_enquiry_detail_out
 from app.schemas.common import ApiResponse
-from app.schemas.enquiry import EnquiryOut, EnquiryDetailOut, LostEnquiryOut
+from app.schemas.enquiry import EnquiryOut, EnquiryDetailOut, LostEnquiryOut, MarkEnquiryLostRequest, ReinstateEnquiryRequest
 from app.schemas.audit_log import EnquiryAuditLogOut
 from app.services.enquiry import EnquiryService
 from fastapi import Query
@@ -295,4 +295,42 @@ async def delete_enquiry_attachment(
     service: EnquiryServiceDep,
 ) -> None:
     await service.delete_attachment(attachment_id)
+
+@router.patch(
+    "/{enquiry_id}/lost",
+    response_model=ApiResponse[EnquiryDetailOut],
+    status_code=status.HTTP_200_OK,
+    summary="Mark an enquiry as lost",
+)
+async def mark_enquiry_as_lost_api(
+    enquiry_id: uuid.UUID,
+    request: MarkEnquiryLostRequest,
+    service: EnquiryServiceDep,
+) -> ApiResponse[EnquiryDetailOut]:
+    enquiry = await service.mark_as_lost(
+        enquiry_id=enquiry_id,
+        stage_lost=request.stage_lost,
+        lost_reason=request.lost_reason,
+        date_lost=request.date_lost,
+        follow_up_date=request.follow_up_date,
+        remarks=request.remarks,
+    )
+    return ok_single(build_enquiry_detail_out(enquiry), message="Enquiry marked as lost successfully.")
+
+@router.patch(
+    "/{enquiry_id}/reinstate",
+    response_model=ApiResponse[EnquiryDetailOut],
+    status_code=status.HTTP_200_OK,
+    summary="Reinstate a lost enquiry",
+)
+async def reinstate_enquiry_api(
+    enquiry_id: uuid.UUID,
+    request: ReinstateEnquiryRequest,
+    service: EnquiryServiceDep,
+) -> ApiResponse[EnquiryDetailOut]:
+    enquiry = await service.reinstate(
+        enquiry_id=enquiry_id,
+        remarks=request.remarks,
+    )
+    return ok_single(build_enquiry_detail_out(enquiry), message="Enquiry reinstated successfully.")
 

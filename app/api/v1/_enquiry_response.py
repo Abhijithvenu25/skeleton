@@ -54,6 +54,7 @@ def build_enquiry_detail_out(enquiry: Enquiry) -> EnquiryDetailOut:
     description = DescriptionOut(
         project_description=enquiry.description,
         remarks=enquiry.remarks,
+        notes=enquiry.notes,
     )
 
     attachments = AttachmentsOut(

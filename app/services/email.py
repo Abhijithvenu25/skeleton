@@ -15,8 +15,8 @@ def send_email_task(
     Background task to send an email using SMTP.
     attachments: list of tuples (filename, content_type, file_bytes)
     """
-    if not settings.smtp_user or not settings.smtp_password:
-        logger.error("SMTP credentials not configured. Skipping email send.")
+    if not settings.smtp_host or not settings.smtp_user or not settings.smtp_password:
+        logger.error("SMTP credentials or host not configured. Skipping email send.")
         return
 
     msg = EmailMessage()

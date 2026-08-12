@@ -31,6 +31,7 @@ class Enquiry(Base, UUIDPKMixin, TimestampMixin, SoftDeleteMixin):
     sales_executive_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id"))
     description: Mapped[str | None] = mapped_column(Text)
     remarks: Mapped[str | None] = mapped_column(Text)
+    notes: Mapped[str | None] = mapped_column(Text)
 
     stage_lost: Mapped[str | None] = mapped_column(String(100))
     lost_reason: Mapped[str | None] = mapped_column(String(500))

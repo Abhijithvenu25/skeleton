@@ -168,6 +168,7 @@ class EnquiryService:
         sales_executive_id: uuid.UUID | None = None,
         project_description: str | None = None,
         remarks: str | None = None,
+        notes: str | None = None,
         stage_lost: str | None = None,
         lost_reason: str | None = None,
         date_lost: date | None = None,
@@ -222,6 +223,8 @@ class EnquiryService:
             enquiry.description = project_description
         if remarks is not None:
             enquiry.remarks = remarks
+        if notes is not None:
+            enquiry.notes = notes
         
         if stage_lost is not None:
             enquiry.stage_lost = stage_lost
@@ -341,6 +344,7 @@ class EnquiryService:
         sales_executive_id: uuid.UUID | None = None,
         project_description: str | None = None,
         remarks: str | None = None,
+        notes: str | None = None,
         boq_files: Sequence[UploadFile | str] | None = None,
         drawings_files: Sequence[UploadFile | str] | None = None,
         photos_files: Sequence[UploadFile | str] | None = None,
@@ -411,6 +415,7 @@ class EnquiryService:
             sales_executive_id=sales_executive_id,
             description=project_description,
             remarks=remarks,
+            notes=notes,
             status=EnquiryStatus.enquiry,
         )
         self.session.add(enquiry)

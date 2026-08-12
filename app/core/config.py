@@ -60,11 +60,14 @@ class Settings(BaseSettings):
     s3_presigned_ttl_seconds: int = 3600
 
     # SMTP Configuration
-    smtp_host: str = "smtp.gmail.com"
+    smtp_host: str | None = None
     smtp_port: int = 587
     smtp_user: str | None = None
     smtp_password: str | None = None
     smtp_from_email: str | None = None
+    
+    # UI/Branding
+    company_logo_url: str | None = None
 
     # JWT
     jwt_secret: str = "change-me"  # noqa: S105

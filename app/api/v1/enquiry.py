@@ -55,6 +55,7 @@ async def create_enquiry(
     sales_executive_id: uuid.UUID | None = Form(None),
     project_description: str | None = Form(None),
     remarks: str | None = Form(None),
+    notes: str | None = Form(None),
     boq: list[UploadFile | str] = File(default=[]),
     drawings: list[UploadFile | str] = File(default=[]),
     photos: list[UploadFile | str] = File(default=[]),
@@ -84,6 +85,7 @@ async def create_enquiry(
         sales_executive_id=sales_executive_id,
         project_description=project_description,
         remarks=remarks,
+        notes=notes,
         boq_files=boq,
         drawings_files=drawings,
         photos_files=photos,
@@ -202,6 +204,7 @@ async def update_enquiry_api(
     sales_executive_id: uuid.UUID | None = Form(None),
     project_description: str | None = Form(None),
     remarks: str | None = Form(None),
+    notes: str | None = Form(None),
     stage_lost: str | None = Form(None),
     lost_reason: str | None = Form(None),
     date_lost: date | None = Form(None),
@@ -238,6 +241,7 @@ async def update_enquiry_api(
         sales_executive_id=sales_executive_id,
         project_description=project_description,
         remarks=remarks,
+        notes=notes,
         stage_lost=stage_lost,
         lost_reason=lost_reason,
         date_lost=date_lost,
@@ -262,7 +266,14 @@ async def get_enquiry_audit_logs_api(
     service: EnquiryServiceDep,
 ) -> ApiResponse[EnquiryAuditLogOut]:
     logs = await service.list_audit_logs(enquiry_id)
-    return ok_list(list(logs), message="Audit logs fetched successfully.")
+    logs_list = list(logs)
+    return ok_list(
+        logs_list, 
+        page=1, 
+        size=len(logs_list) if len(logs_list) > 0 else 1, 
+        total=len(logs_list), 
+        message="Audit logs fetched successfully."
+    )
 
 @router.delete(
     "/{enquiry_id}",

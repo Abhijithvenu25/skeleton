@@ -40,6 +40,7 @@ class ProjectDetailsOut(BaseModel):
 class DescriptionOut(BaseModel):
     project_description: str | None = None
     remarks: str | None = None
+    notes: str | None = None
 
 class AttachmentFile(BaseModel):
     id: uuid.UUID

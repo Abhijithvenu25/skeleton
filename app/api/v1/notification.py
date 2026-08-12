@@ -32,8 +32,15 @@ async def send_email_notification(
     if os.path.exists(TEMPLATE_PATH):
         with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
             template_content = f.read()
+            
+            # Build logo HTML
+            logo_html = ""
+            from app.core.config import settings
+            if settings.company_logo_url:
+                logo_html = f'<img src="{settings.company_logo_url}" alt="Company Logo" style="max-height: 50px; margin-bottom: 10px;" />'
+                
             # Basic string replacement
-            body_html = template_content.replace("{subject}", subject).replace("{body}", message)
+            body_html = template_content.replace("{subject}", subject).replace("{body}", message).replace("{logo_html}", logo_html)
     
     # 2. Read attachments into memory safely before background task executes
     attachment_data: list[tuple[str, str, bytes]] = []

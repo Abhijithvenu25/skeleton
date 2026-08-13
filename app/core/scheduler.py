@@ -1,6 +1,6 @@
 import structlog
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from app.db.session import async_session_maker
+from app.db.session import SessionLocal
 
 logger = structlog.get_logger(__name__)
 scheduler = AsyncIOScheduler()
@@ -10,7 +10,7 @@ async def trigger_stale_enquiry_job():
     try:
         from app.services.enquiry import EnquiryService
         logger.info("Running trigger_stale_enquiry_job")
-        async with async_session_maker() as session:
+        async with SessionLocal() as session:
             service = EnquiryService(session)
             count = await service.mark_stale_enquiries_as_lost(days=45)
             logger.info("trigger_stale_enquiry_job completed", count_marked_lost=count)

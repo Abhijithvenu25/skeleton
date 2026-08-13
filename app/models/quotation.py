@@ -80,3 +80,7 @@ class Quotation(Base, UUIDPKMixin, TimestampMixin, AuditMixin):
     @property
     def updated_by_name(self) -> str | None:
         return self.updated_by.full_name if self.updated_by else None
+
+    @property
+    def site_visit_no(self) -> str | None:
+        return self.site_visit.visit_number if self.site_visit else None

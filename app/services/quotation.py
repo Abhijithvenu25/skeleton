@@ -105,6 +105,7 @@ class QuotationService:
         stmt = select(Quotation).options(
             selectinload(Quotation.line_items),
             selectinload(Quotation.enquiry),
+            selectinload(Quotation.site_visit),
             selectinload(Quotation.company),
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
@@ -117,6 +118,7 @@ class QuotationService:
         stmt = select(Quotation).options(
             selectinload(Quotation.line_items),
             selectinload(Quotation.enquiry),
+            selectinload(Quotation.site_visit),
             selectinload(Quotation.company),
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
@@ -183,6 +185,7 @@ class QuotationService:
         stmt = select(Quotation).options(
             selectinload(Quotation.line_items),
             selectinload(Quotation.enquiry),
+            selectinload(Quotation.site_visit),
             selectinload(Quotation.company),
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
@@ -195,6 +198,7 @@ class QuotationService:
         stmt = select(Quotation).options(
             selectinload(Quotation.line_items),
             selectinload(Quotation.enquiry),
+            selectinload(Quotation.site_visit),
             selectinload(Quotation.company),
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
@@ -213,6 +217,7 @@ class QuotationService:
         stmt = select(Quotation).options(
             selectinload(Quotation.line_items),
             selectinload(Quotation.enquiry),
+            selectinload(Quotation.site_visit),
             selectinload(Quotation.company),
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
@@ -244,6 +249,7 @@ class QuotationService:
         stmt = select(Quotation).options(
             selectinload(Quotation.line_items),
             selectinload(Quotation.enquiry),
+            selectinload(Quotation.site_visit),
             selectinload(Quotation.company),
             selectinload(Quotation.executive),
             selectinload(Quotation.created_by),
@@ -303,6 +309,7 @@ class QuotationService:
             .options(
                 selectinload(Quotation.line_items),
                 selectinload(Quotation.enquiry),
+            selectinload(Quotation.site_visit),
                 selectinload(Quotation.company),
                 selectinload(Quotation.executive),
                 selectinload(Quotation.created_by),

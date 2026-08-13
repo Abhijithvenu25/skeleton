@@ -516,6 +516,28 @@ class EnquiryService:
         await self.session.refresh(enquiry)
         return enquiry
 
+    async def mark_stale_enquiries_as_lost(self, days: int = 45) -> int:
+        from datetime import timedelta
+        threshold_date = datetime.now(tz=UTC) - timedelta(days=days)
+        
+        stmt = select(Enquiry).where(
+            Enquiry.status == EnquiryStatus.enquiry,
+            Enquiry.updated_at < threshold_date
+        )
+        enquiries = (await self.session.scalars(stmt)).all()
+        
+        count = 0
+        for enquiry in enquiries:
+            await self.mark_as_lost(
+                enquiry_id=enquiry.id,
+                stage_lost="enquiry",
+                lost_reason="No response",
+                remarks="Automatically closed due to 45 days of inactivity."
+            )
+            count += 1
+            
+        return count
+
     async def reinstate(
         self,
         enquiry_id: uuid.UUID,

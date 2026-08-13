@@ -123,6 +123,7 @@ class QuotationOut(QuotationBase):
     sent_date: date | None = None
     status: QuotationStatus
     enquiry_no: str | None = None
+    site_visit_no: str | None = None
     created_by_name: str | None = None
     updated_by_name: str | None = None
     created_at: datetime

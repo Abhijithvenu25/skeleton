@@ -17,6 +17,7 @@ from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
 from app.db.redis import close_redis, ping_redis
 from app.storage.s3 import close_s3, ping_s3
+from app.core.scheduler import init_scheduler, scheduler
 
 if TYPE_CHECKING:
     from collections.abc import AsyncIterator
@@ -60,7 +61,14 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     # The /readyz probe reflects the degraded state and POST /uploads returns
     # 503 at request time if storage is down.
     await ping_s3()
+    
+    # Start background scheduler
+    init_scheduler()
+    scheduler.start()
+    
     yield
+    
+    scheduler.shutdown()
     await close_redis()
     await close_s3()
     logger.info("app_stopped")
